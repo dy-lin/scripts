@@ -7,6 +7,7 @@ args = sys.argv[1:]
 
 if len(args) != 2 and len(args) !=1:
 	print("Usage: %s <FASTA file> [GFF file]" % sys.argv[0])
+	sys.exit(1)
 
 file = args[0]
 #file = input("Filename: ")
@@ -41,39 +42,48 @@ outFile=[]
 num_gaps = len(gaps)
 outFile.append("Gaps in " + file + "\n")
 outFile.append("Number of gaps: " + str(num_gaps) + "\n\n")
+if num_gaps !=0:
+	outFile.append("Gap Number\tGap Position\tGap Length\n")
+	for i,N in enumerate(gaps):
+		outFile.append(str(i+1) + "\t" + N + "\t" + str(lengths[i])+"\n")
+	outFileName=""
+	if "." in file:
+		name=file.split(".")
+		extLen=len(name[-1])+1
+		outFileName=file[:-extLen] + ".gaps.tsv"
+	else:
+		outFileName=file + ".gaps.tsv"
+	outFileString= "".join(outFile)
+	with open(outFileName, "w") as f:
+		f.write(outFileString)
 
-outFile.append("Gap Number\tGap Position\tGap Length\n")
-for i,N in enumerate(gaps):
-	outFile.append(str(i+1) + "\t" + N + "\t" + str(lengths[i])+"\n")
-outFileName=file[:-2] + "gaps.tsv"
-outFileString= "".join(outFile)
-with open(outFileName, "w") as f:
-	f.write(outFileString)
-
-if len(args) == 2:
-	gff = args[1]
-	with open(gff, "r") as f:
-		gffFile=list(f)
-	gffList=[]
-	for index, line in enumerate(gffFile):
-		gffList.append(line.rstrip().split("\t"))
-	features=[]
-	for i in gffList:
-		temp= i[8].split(";")
-		features.append([i[2],i[3],i[4],temp[0][3:]])
-	nonmRNA=[]
-	for i in features:
-		if i[0] != "mRNA":
-			nonmRNA.append(i)
-	genes=[]
-	for index, pair in enumerate(borders):
-		for i in range(pair[0],pair[1]+1):
-			for j in nonmRNA:
-				if i in range(int(j[1]),int(j[2])+1):
-					genes.append([gaps[index], j[3]])
-	with open(outFileName, "a") as f:
-		
-		f.write("\nGFF: " + gff + "\n")
-		f.write("Gap Position\tGene:Feature\n")
-		for i in genes:
-			f.write(i[0]+ "\t" + i[1])
+	if len(args) == 2:
+		gff = args[1]
+		with open(gff, "r") as f:
+			gffFile=list(f)
+		gffList=[]
+		for index, line in enumerate(gffFile):
+			gffList.append(line.rstrip().split("\t"))
+		features=[]
+		for i in gffList:
+			temp= i[8].split(";")
+			features.append([i[2],i[3],i[4],temp[0][3:]])
+		nonmRNA=[]
+		for i in features:
+			if i[0] != "mRNA":
+				nonmRNA.append(i)
+		genes=[]
+		for index, pair in enumerate(borders):
+			for i in range(pair[0],pair[1]+1):
+				for j in nonmRNA:
+					if i in range(int(j[1]),int(j[2])+1):
+						genes.append([gaps[index], j[3]])
+		with open(outFileName, "a") as f:
+			
+			f.write("\nGFF: " + gff + "\n")
+			f.write("Gap Position\tGene:Feature\n")
+			for i in genes:
+				f.write(i[0]+ "\t" + i[1])
+else:
+	print("Gaps in " + file)
+	print("Number of gaps: " + str(num_gaps))
