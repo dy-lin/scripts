@@ -33,9 +33,9 @@ else:
 with open(outputFileName, "w") as f:
 	for line in inputFile:
 		if line[0] == ">":
-			f.write(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1) + "\n")
+		#	f.write(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1) + "\n")
 			print(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1))
 		else:
 			slice = line[start:end+1]
-			f.write(slice + "\n")
+		#	f.write(slice + "\n")
 			print(slice)

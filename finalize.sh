@@ -1,14 +1,14 @@
 #!/bin/bash
 IFS=$'\n'
 #file=$1
-file="WS77111-chloroplast-EMBOSS-v2-backup.gff"
+file="Se404-851cp.gff"
 temp="temp.gff"
-output="WS77111-chloroplast-EMBOSS-out.gff"
+output="Se404-851cp.numbered.gff"
 gene_count=1
 mRNA_count=1
 tRNA_count=1
 rRNA_count=1
-code="Picea_glau"
+code="Se404-851-"
 feat="gene"
 
 if [ -e $output ]
@@ -29,13 +29,10 @@ do
 			name=$(echo $line | awk '/gene=/ {print $9}' | awk -F ";" '{print $2}' | awk -F "=" '{print $2}')
 			echo $line | sed "s/ID=${code}\.[0-9]\+/ID=gene${gene_count}/" | sed "s/$/Name=${name}/" >> $output
 			gene_count=$((gene_count + 1)) 
-	#		if [ "$name" == "rps12" ]
-	#		then
-	#			gene_count=$((gene_count-1))
 			feat="gene"
 			;;
 		mRNA)
-			echo $line |  sed "s/ID=${code}\.[0-9]\+/ID=mRNA${mRNA_count}/" | sed "s/gene=\w\+-\?\w*;\?/Parent=gene$((gene_count-1));/" | sed "s/$/gene=${name}/" >> $output
+			echo $line |  sed "s/ID=${code}\.[0-9]\+/ID=mRNA${mRNA_count}/" | sed "s/gene=\w\+-\?\w*;\?/Parent=gene$((gene_count-1));/" | sed "s/$/gene=${name}/" | sed 's/\t[0-2]\tID/\t\.\tID/' >> $output
 			mRNA_count=$((mRNA_count+1))
 			feat="mRNA"
 			;;
@@ -68,13 +65,13 @@ do
 		CDS)
 			case $feat in
 				mRNA) 
-					echo $line |  sed "s/ID=${code}\.[0-9]\+/Parent=mRNA$((mRNA_count-1))/" | sed 's/gene=\w\+-\?\w*;\?//' | sed "s/$/gene=${name}/" | sed 's/$/;/' |  sed "s/$/ID=CDS-${name}/" >> $output
+					echo $line |  sed "s/ID=${code}\.[0-9]\+/Parent=mRNA$((mRNA_count-1))/" | sed 's/gene=\w\+-\?\w*;\?//' | sed "s/$/gene=${name}/" | sed 's/$/;/' |  sed "s/$/Name=CDS-${name}/" >> $output
 					;;
 				tRNA)
-					echo $line | sed "s/ID=${code}\.[0-9]\+/Parent=tRNA$((tRNA_count-1))/" | sed 's/gene=\w\+-\?\w*;\?//' | sed "s/$/gene=${name}/" | sed 's/$/;/' | sed "s/$/ID=CDS-${name}/"  >> $output
+					echo $line | sed "s/ID=${code}\.[0-9]\+/Parent=tRNA$((tRNA_count-1))/" | sed 's/gene=\w\+-\?\w*;\?//' | sed "s/$/gene=${name}/" | sed 's/$/;/' | sed "s/$/Name=CDS-${name}/"  >> $output
 					;;
 				rRNA)
-					echo $line | sed "s/ID=${code}\.[0-9]\+/Parent=rRNA$((rRNA_count-1))/" | sed 's/gene=\w\+-\?\w*;\?//' | sed "s/$/gene=${name}/" | sed 's/$/;/' | sed "s/$/ID=CDS-${name}/"  >> $output
+					echo $line | sed "s/ID=${code}\.[0-9]\+/Parent=rRNA$((rRNA_count-1))/" | sed 's/gene=\w\+-\?\w*;\?//' | sed "s/$/gene=${name}/" | sed 's/$/;/' | sed "s/$/Name=CDS-${name}/"  >> $output
 					;;
 				*)
 					;;
@@ -96,9 +93,12 @@ do
 			esac
 			;;
 		*)
+			echo $line >> $output
 			;;
 esac
 done
+sed -i 's/Se404-851-/Se404-851cp/' $output
+sed -i 's/featflags=type:CDS;//' $output
 sed -i 's/number=[0-9];\?//' $output
 sed -i 's/;$//' $output
 rm $temp
