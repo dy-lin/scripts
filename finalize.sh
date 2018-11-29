@@ -32,7 +32,7 @@ do
 			feat="gene"
 			;;
 		mRNA)
-			echo $line |  sed "s/ID=${code}\.[0-9]\+/ID=mRNA${mRNA_count}/" | sed "s/gene=\w\+-\?\w*;\?/Parent=gene$((gene_count-1));/" | sed "s/$/gene=${name}/" | sed 's/\t[0-2]\tID/\t\.\tID/' >> $output
+			echo $line |  sed "s/ID=${code}\.[0-9]\+/ID=mRNA${mRNA_count}/" | sed "s/gene=\w\+-\?\.\?\w*;\?/Parent=gene$((gene_count-1));/" | sed "s/$/gene=${name}/" | sed 's/\t[0-2]\tID/\t\.\tID/' >> $output
 			mRNA_count=$((mRNA_count+1))
 			feat="mRNA"
 			;;

@@ -1,5 +1,5 @@
-#!/usr/bin/python
-
+#!/usr/bin/env python
+from __future__ import print_function
 import os
 import sys
 
@@ -73,7 +73,7 @@ if num_gaps !=0:
 			features.append([i[2],i[3],i[4],temp[0][3:]])
 		nonmRNA=[]
 		for i in features:
-			if i[0] != "mRNA":
+			if i[0] != "mRNA" and i[0] != "gene":
 				nonmRNA.append(i)
 		genes=[]
 		

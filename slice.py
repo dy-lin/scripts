@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from __future__ import print_function
 import os
@@ -30,12 +30,12 @@ else:
 	outputFileName = inputFileName + "." + str(start+1) +  "to" +  str(end+1) + "bp.fa"
 
 
-with open(outputFileName, "w") as f:
-	for line in inputFile:
-		if line[0] == ">":
-		#	f.write(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1) + "\n")
-			print(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1))
-		else:
-			slice = line[start:end+1]
-		#	f.write(slice + "\n")
-			print(slice)
+#with open(outputFileName, "w") as f:
+for line in inputFile:
+	if line[0] == ">":
+	#	f.write(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1) + "\n")
+		print(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1))
+	else:
+		slice = line[start:end+1]
+	#	f.write(slice + "\n")
+		print(slice)
