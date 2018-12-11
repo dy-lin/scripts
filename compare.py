@@ -21,9 +21,6 @@ seqs = [i.rstrip() for i in fasta[1::2]]
 length = len(seqs[0])
 
 for i in seqs:
-	if len(i) != length:
-		print("Your sequences are not of the same length and cannot be directly compared.")
-		sys.exit(1)
 	if len(seqID) != len (seqs):
 		print("There is a different number of sequence IDs than sequences.")
 		sys.exit(1)
@@ -33,6 +30,8 @@ listLen = len(seqs)
 matched = False
 for i in range(listLen-1):
 	for j in range(i+1,listLen):
+		#if (len(seqs[i]) != len(seqs[j])):
+			#print(f"{seqID[i]} is a different length than {seqID[j]} and cannot be directly compared.")
 		if (seqs[i] == seqs[j]):
 			matched = True
 			print(f"{seqID[i]} is identical to {seqID[j]}.")

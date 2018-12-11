@@ -21,7 +21,6 @@ start = 0
 gaps = []
 lengths=[]
 borders=[]
-
 for index, base in enumerate(sequence):
 	if gap == False:
 		if base == "N":
@@ -37,11 +36,13 @@ for index, base in enumerate(sequence):
 				gaps.append("" + str(start) + " to " + str(end))
 			borders.append([start,end])
 			lengths.append(end-start+1)
-
+maxgap=max(lengths)
 outFile=[]
 num_gaps = len(gaps)
-outFile.append("Gaps in " + file + "\n")
-outFile.append("Number of gaps: " + str(num_gaps) + "\n\n")
+filename=file.split("/")[-1]
+outFile.append("Gaps in " + filename + "\n")
+outFile.append("Number of gaps: " + str(num_gaps) + "\n")
+outFile.append("Longest gap length: " + str(maxgap) + "\n\n")
 if num_gaps !=0:
 	outFile.append("Gap Number\tGap Position\tGap Length\n")
 	for i,N in enumerate(gaps):
@@ -121,6 +122,9 @@ if num_gaps !=0:
 				slice = sequence[seq[0]-1:seq[1]]
 				f.write(slice + "\n")
 
+	print("Gaps in " + filename)
+	print("Number of gaps: " + str(num_gaps))
+	print("Longest gap length: " + str(maxgap))
 else:
-	print("Gaps in " + file)
+	print("Gaps in " + filename)
 	print("Number of gaps: " + str(num_gaps))

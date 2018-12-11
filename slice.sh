@@ -6,10 +6,4 @@ then
 	exit 1
 fi
 
-filename=$(basename $3)
-extension="${filename##*.}"
-filename=$(basename $3 $extension)
-
-seqtk seq $3 > ${filename}seqtk.fa
-slice.py $1 $2 ${filename}seqtk.fa
-rm ${filename}seqtk.fa
+slice.py $1 $2 <(seqtk seq $3)

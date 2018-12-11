@@ -36,6 +36,6 @@ for line in inputFile:
 	#	f.write(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1) + "\n")
 		print(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1))
 	else:
-		slice = line[start:end+1]
+		slice = line[start:end+1].rstrip()
 	#	f.write(slice + "\n")
 		print(slice)
