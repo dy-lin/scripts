@@ -6,4 +6,9 @@ then
 	exit 1
 fi
 
-slice.py $1 $2 <(seqtk seq $3)
+if [ "$1" -gt "$2" ]
+then
+	slice.py $1 $2 <(seqtk seq -r $3)
+else
+	slice.py $1 $2 <(seqtk seq $3)
+fi
