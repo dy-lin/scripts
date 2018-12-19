@@ -1,7 +1,7 @@
 #!/bin/bash
 
 gff=$1
-
+#split a merged GFF of various scaffolds (e.g. of one spruce genotype) into its respective GFF files for individual viewing in IGV
 csplit -s $gff /##gff-version/ {*}
 
 for file in xx*

@@ -5,6 +5,7 @@ import os
 import sys
 
 args = sys.argv[1:]
+#This part unnecessary as it is in the bash script that calls this python script
 #if len(args) != 3:
 #	print("Usage: %s <Start> <End> <Input File>" % sys.argv[0])
 #	sys.exit(1)
@@ -17,6 +18,8 @@ inputFileName=args[2]
 neg = False
 same = False
 reverse = False
+
+#Script is compatible if only one coordinate is given
 if y == "+":
 	same = True
 	neg = False
@@ -38,6 +41,8 @@ else:
 
 with open(inputFileName, "r") as f:
 	inputFile=list(f)
+#Uncomment to write to file in python script
+#Easier to use bash redirection to save file 
 
 #outputFileName=""
 #Find extension
@@ -61,17 +66,19 @@ for line in inputFile:
 			print(line.strip() + " Start: " + str(start+1) + " End: " + str(end+1))
 
 	else:
-		#if coordinates were flipped, the reverse complement of the strand was taken, thereby changing the coordinate placement
+		#if coordinates were flipped, the reverse complement of the strand was taken in the bash script, thereby changing the coordinate placement
 		# to solve this, print the sequence backwards so the coordinates are correct but the bases are still in reverse order
 		# then print the sliced portion in reverse, leaving the 5' -> 3' correct sliced portion with correct bases
+	
+		# if only one base is needed, easier to do give complementary base manually
 		if same == True and neg == True:
-			if line[base] == 'A':
+			if line[base].upper() == 'A':
 				print('T')
-			elif line[base] == 'T':
+			elif line[base].upper() == 'T':
 				print('A')
-			elif line[base] == 'C':
+			elif line[base].upper() == 'C':
 				print('G')
-			elif line[base] == 'G':
+			elif line[base].upper() == 'G':
 				print('C')
 			else:
 				print("Invalid base.")
@@ -81,6 +88,7 @@ for line in inputFile:
 			rc=line.rstrip()[::-1]
 			slice=rc[start:end+1]
 			print(slice[::-1])
+	# if the slice is NOT an empty string (in the case that it is if only 1 coordinate is given), follow normal procedure to slice
 		elif slice != "":
 			slice = line[start:end+1].rstrip()
 	#		f.write(slice + "\n")

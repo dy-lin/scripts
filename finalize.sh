@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Takes a processed GeSeq and EMBOSS Seqret generated GFF file and renumbers IDs, etc. based on Genbank Submission requirements
+# Processed: duplicates have been removed as to not interfere with the numbering process
 IFS=$'\n'
 #file=$1
 file="Se404-851cp.gff"
@@ -8,6 +11,8 @@ gene_count=1
 mRNA_count=1
 tRNA_count=1
 rRNA_count=1
+
+#Genotype code of the species
 code="Se404-851-"
 feat="gene"
 
@@ -16,9 +21,16 @@ then
 	rm $output
 fi
 
+#GeSeq gives every single feature its own ID, despite it being a 'children' feature
 sed 's/Parent=/ID=/' $file > $temp
+
+#GeSeq annotates certain mRNAs as 'biological regions'
 sed -i 's/biological_region/mRNA/' $temp
+
+#Remove trailing spaces
 sed -i 's/[[:space:]]\+$//' $temp
+
+#Add trailing semicolons
 sed -i 's/$/;/' $temp
 
 for line in $(cat $temp)
@@ -97,8 +109,16 @@ do
 			;;
 esac
 done
+
+#Change the 'scaffold' name
 sed -i 's/Se404-851-/Se404-851cp/' $output
+
+#Remove featflags
 sed -i 's/featflags=type:CDS;//' $output
+
+#Remove copy number
 sed -i 's/number=[0-9];\?//' $output
+
+#Remove trailing semicolons
 sed -i 's/;$//' $output
 rm $temp

@@ -3,6 +3,8 @@ from __future__ import print_function
 import os
 import sys
 
+#Given mRNA and intron coordinates (manually extracted from a GFF file), print a FASTA file to screen with intron segment removed
+
 args = sys.argv[1:]
 
 if len(args) != 5:
@@ -25,6 +27,8 @@ exon1=sequence[RNAstart-1:INTRONstart-1]
 exon2=sequence[INTRONend:RNAend]
 
 length=INTRONend-INTRONstart+1
+
+#Should an actual file be wanted, use bash redirection to save the output as a file.
 
 print(f"{header} intron length: {length}")
 print(exon1 + exon2)
