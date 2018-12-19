@@ -16,9 +16,38 @@ then
 	exit 1
 fi
 
+function run_jackhmmer() {
+	AMP=$1
+	lit=$2
+	database=$3
+	N=$4
+	threshold=$5
+
+	echo "Bit score $threshold detected..."
+	#in the case that <sweep end> = <sweep start>, meaning no sweep is needed, just a straight-forward jackhmmer with a specified threshold
+	outfile="jackhmmer_bs${threshold}_N${N}.out"
+	while true
+	do
+		echo "Running jackhmmer with a threshold of $threshold for $N iterations..."
+		jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database
+		converged=$(grep -c 'CONVERGED' $outfile)
+		total=$(grep -c 'Query:' $outfile)
+		#If not converged, increase iterations and delete the file
+		if [ "$converged" -ne "$total" ]
+		then
+			rm $outfile
+			N=$((N+5))
+			echo "At bit score threshold $threshold, not all queries converged. Increasing N to $N."
+		else
+			#Once converged, stop increasing iterations and break
+			break
+		fi
+	done
+}
+
 #Guide Blast - directly blast known/literature defensins against the database to see which proteins we cannot lose - threshold 99% identity
 
-if [ "$end" != "$begin" ]
+if [ "$end" -ne "$begin" ]
 then
 	difference=$((end-begin))
 	if [ "$difference" -gt 100 ]
@@ -34,9 +63,13 @@ then
 	while [[ $((difference%step)) -ne 0 && "$difference" -ne 0 ]]
 	do
 		echo "The difference between <sweep start> and <sweep end> must be a multiple of $step."
-		echo "Please enter a new <sweep start> and <sweep end> on the line below (separated by a space)."
+		echo "Please enter a new <sweep start> and <sweep end> on the line below (separated by a space). To run jackhmmer at a specific threshold (no sweep), please enter the desired threshold as a single value."
 		read newbegin newend
-		if [[ ! -z "$newbegin" && ! -z "$newend" ]]
+		if [ ! -z "$newbegin" ] && [ -z "$newend" ]
+		then
+			end=0
+			break
+		elif [[ ! -z "$newbegin" && ! -z "$newend" ]]
 		then
 			difference=$((newend-newbegin))
 			if [ "$difference" -gt 100 ]
@@ -48,98 +81,86 @@ then
 			else
 				step=1
 			fi
+			begin=$newbegin
+			end=$newend
 		else
 			continue
 		fi
-		begin=$newbegin
-		end=$newend
 	done
 
-	#Testing this script for bugs -- do not build BLASTDB and BLASTP unnecessarily
-	if [ ! -e "guide-proteins.txt" ]
+	if [ "$end" -ne 0 ] && [ "$begin" -ne "$end" ]
 	then
-		echo "Making BLAST database..."
-		makeblastdb -dbtype prot -in $database -out blastpdb
-		echo -e "\nBLASTing..."
-		blastp -db blastpdb -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48
-		#filter blastp results for 99% identity sequences
-		awk '{if($3>99) print $2}' guide-blast.blastp | sort -u > guide-proteins.txt
-	fi
+		#Testing this script for bugs -- do not build BLASTDB and BLASTP unnecessarily
+		if [ ! -e "guide-proteins.txt" ]
+		then
+			echo "Making BLAST database..."
+			makeblastdb -dbtype prot -in $database -out blastpdb
+			echo -e "\nBLASTing..."
+			blastp -db blastpdb -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48
+			#filter blastp results for 99% identity sequences
+			awk '{if($3>99) print $2}' guide-blast.blastp | sort -u > guide-proteins.txt
+		fi
 
-	#see what threshold we lose these proteins - do a jackhmmer sweep where grep for guide-proteins at each threshold
-	echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
-	jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
-	sweep=$?
-	#if sweep > 0, then script executed with no problems
-	while [ "$sweep" -gt 0 ]
-	do
-		#if sweep = 1, jackhmmer did not converge
-		if [ "$sweep" -eq 1 ]
-		then
-			N=$((N+5))
-			echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
-			jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
-			sweep=$?
-		#if sweep = 2, the sweep start is too low
-		elif [ "$sweep" -eq 2 ]
-		then
-			end=$begin
-			begin=$((begin-difference))
-			echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
-			jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
-			sweep=$?
-		#if sweep > 2 (aka a threshold), then reduce the interval and find the threshold
-		elif [ "$sweep" -gt 2 ]
-		then
-			end=$sweep
-			begin=$((end-step))
-			if [ "$step" -eq 100 ]
+		#see what threshold we lose these proteins - do a jackhmmer sweep where grep for guide-proteins at each threshold
+		echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
+		jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
+		sweep=$?
+		#if sweep > 0, then script executed with no problems
+		while [ "$sweep" -gt 0 ]
+		do
+			#if sweep = 1, jackhmmer did not converge
+			if [ "$sweep" -eq 1 ]
 			then
-				step=10
-			elif [ "$step" -eq 10 ]
+				N=$((N+5))
+				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
+				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
+				sweep=$?
+			#if sweep = 2, the sweep start is too low
+			elif [ "$sweep" -eq 2 ]
 			then
-				step=1
-			else
-				break
+				end=$begin
+				begin=$((begin-difference))
+				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
+				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
+				sweep=$?
+			#if sweep > 2 (aka a threshold), then reduce the interval and find the threshold
+			elif [ "$sweep" -gt 2 ]
+			then
+				end=$sweep
+				begin=$((end-step))
+				if [ "$step" -eq 100 ]
+				then
+					step=10
+				elif [ "$step" -eq 10 ]
+				then
+					step=1
+				else
+					break
+				fi
+				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
+				jackhmmer-sweep.sh $AMP $lit $database $N $((begin+step)) $((end-step)) $step
+				sweep=$?
+			fi		
+		done
+		threshold=$((sweep-1))
+		echo "$threshold is the optimal jackhmmer threshold!"
+		outfile="jackhmmer_bs${threshold}_N${N}.out"
+		#Delete all jackhmmer output files that are unnecessary
+		for file in jackhmmer_bs*_N*.out
+		do
+			if [ "$file" == "$outfile" ]
+			then
+				continue
 			fi
-			echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
-			jackhmmer-sweep.sh $AMP $lit $database $N $((begin+step)) $((end-step)) $step
-			sweep=$?
-		fi		
-	done
-	threshold=$((sweep-1))
-	echo "$threshold is the optimal jackhmmer threshold!"
-	outfile="jackhmmer_bs${threshold}_N${N}.out"
-	#Delete all jackhmmer output files that are unnecessary
-	for file in jackhmmer_bs*_N*.out
-	do
-		if [ "$file" == "$outfile" ]
-		then
-			continue
-		fi
-		rm $file
-	done
+			rm $file
+		done
+	else
+		run_jackhmmer $AMP $lit $database $N $begin
+		outfile="jackhmmer_bs${begin}_N${N}.out"
+	fi
 else
-	echo "Bit score $threshold detected..."
-	#in the case that <sweep end> = <sweep start>, meaning no sweep is needed, just a straight-forward jackhmmer with a specified threshold
+	run_jackhmmer $AMP $lit $database $N $begin
 	outfile="jackhmmer_bs${begin}_N${N}.out"
-	while true
-	do
-		echo "Running jackhmmer with a threshold of $begin for $N iterations..."
-		jackhmmer --noali -T $begin -N $N -o $outfile $AMP $database
-		converged=$(grep -c 'CONVERGED' $outfile)
-		total=$(grep -c 'Query:' $outfile)
-		#If not converged, increase iterations and delete the file
-		if [ "$converged" -ne "$total" ]
-		then
-			rm $outfile
-			N=$((N+5))
-			echo "At bit score threshold $begin, not all queries converged. Increasing N to $N."
-		else
-			#Once converged, stop increasing iterations and break
-			break
-		fi
-	done
 fi
 
 # Filter jackhmmer results for all hits (start with >>), and remove duplicates, then get their sequences using their names
