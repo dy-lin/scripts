@@ -68,6 +68,7 @@ then
 		if [ ! -z "$newbegin" ] && [ -z "$newend" ]
 		then
 			end=0
+			begin=$newbegin
 			break
 		elif [[ ! -z "$newbegin" && ! -z "$newend" ]]
 		then
