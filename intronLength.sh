@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Extract intron lengths given a GFF file
+# Prints results to screen, use bash redirection to save file to a tsv
+
+if [ "$#" -ne 1 ]
+then
+	echo "USAGE: $(basenmae $0) <GFF file>"
+	exit 1
+fi
 gff=$1
 
 IFS=$'\n'

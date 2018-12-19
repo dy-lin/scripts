@@ -1,4 +1,5 @@
 #!/bin/bash
+
 AMP=$1
 lit=$2
 database=$3
@@ -24,7 +25,7 @@ function run_jackhmmer() {
 	threshold=$5
 
 	echo "Bit score $threshold detected..."
-	#in the case that <sweep end> = <sweep start>, meaning no sweep is needed, just a straight-forward jackhmmer with a specified threshold
+	# In the case that <sweep end> = <sweep start>, meaning no sweep is needed, just a straight-forward jackhmmer with a specified threshold
 	outfile="jackhmmer_bs${threshold}_N${N}.out"
 	while true
 	do
@@ -32,20 +33,20 @@ function run_jackhmmer() {
 		jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database
 		converged=$(grep -c 'CONVERGED' $outfile)
 		total=$(grep -c 'Query:' $outfile)
-		#If not converged, increase iterations and delete the file
+		# If not converged, increase iterations and delete the file
 		if [ "$converged" -ne "$total" ]
 		then
 			rm $outfile
 			N=$((N+5))
 			echo "At bit score threshold $threshold, not all queries converged. Increasing N to $N."
 		else
-			#Once converged, stop increasing iterations and break
+			# Once converged, stop increasing iterations and break
 			break
 		fi
 	done
 }
 
-#Guide Blast - directly blast known/literature defensins against the database to see which proteins we cannot lose - threshold 99% identity
+# Guide Blast - directly blast known/literature defensins against the database to see which proteins we cannot lose - threshold 99% identity
 
 if [ "$end" -ne "$begin" ]
 then
@@ -59,7 +60,7 @@ then
 	else
 		step=1
 	fi
-	#if difference is not divisble by the assigned step, ask user to change it.
+	# If difference is not divisble by the assigned step, ask user to change it
 	while [[ $((difference%step)) -ne 0 && "$difference" -ne 0 ]]
 	do
 		echo "The difference between <sweep start> and <sweep end> must be a multiple of $step."
@@ -91,32 +92,32 @@ then
 
 	if [ "$end" -ne 0 ] && [ "$begin" -ne "$end" ]
 	then
-		#Testing this script for bugs -- do not build BLASTDB and BLASTP unnecessarily
+		# Existence test used for debugging purposes
 		if [ ! -e "guide-proteins.txt" ]
 		then
 			echo "Making BLAST database..."
-			makeblastdb -dbtype prot -in $database -out blastpdb
+			makeblastdb -dbtype prot -in $database -out guide-blast
 			echo -e "\nBLASTing..."
-			blastp -db blastpdb -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48
-			#filter blastp results for 99% identity sequences
+			blastp -db guide-blast -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48
+			# Filter blastp results for 99% identity sequences
 			awk '{if($3>99) print $2}' guide-blast.blastp | sort -u > guide-proteins.txt
 		fi
 
-		#see what threshold we lose these proteins - do a jackhmmer sweep where grep for guide-proteins at each threshold
+		# See what threshold we lose these proteins - do a jackhmmer sweep where grep for guide-proteins at each threshold
 		echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 		jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 		sweep=$?
-		#if sweep > 0, then script executed with no problems
+		# If sweep > 0, then script executed with no problems
 		while [ "$sweep" -gt 0 ]
 		do
-			#if sweep = 1, jackhmmer did not converge
+			# If sweep = 1, jackhmmer did not converge
 			if [ "$sweep" -eq 1 ]
 			then
 				N=$((N+5))
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
-			#if sweep = 2, the sweep start is too low
+			# If sweep = 2, the sweep start is too low
 			elif [ "$sweep" -eq 2 ]
 			then
 				end=$begin
@@ -124,7 +125,7 @@ then
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
-			#if sweep > 2 (aka a threshold), then reduce the interval and find the threshold
+			# If sweep > 2 (aka a threshold), then reduce the interval and find the threshold
 			elif [ "$sweep" -gt 2 ]
 			then
 				end=$sweep
@@ -144,9 +145,9 @@ then
 			fi		
 		done
 		threshold=$((sweep-1))
-		echo "$threshold is the optimal jackhmmer threshold!"
+		echo -e "\nBit score threshold $threshold is the optimal threshold to use when running jackhmmer!\n"
 		outfile="jackhmmer_bs${threshold}_N${N}.out"
-		#Delete all jackhmmer output files that are unnecessary
+		# Delete all jackhmmer output files that are unnecessary
 		for file in jackhmmer_bs*_N*.out
 		do
 			if [ "$file" == "$outfile" ]
@@ -168,19 +169,19 @@ fi
 echo "Running seqtk..."
 seqtk subseq $database <(awk '/^>>/ {print $2}' $outfile | sort -u) > jackhmmer-hits.faa
 
-#For debugging, avoid unnecessary computations
+# Existence Test for debugging purposes
 if [ ! -e "jackhmmer-blast-hits.faa" ]
 then
 	echo "Making BLAST database..."
-	makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer-db
+	makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer
 
 	echo -e "\nBLASTing..."
-	blastp -db jackhmmer-db -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48
+	blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48
 	echo "Running seqtk..."
 	seqtk subseq $database <(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u) > jackhmmer-blast-hits.faa
 fi
 
-#GET scaffolds, gffs and transcripts and then run in WS777111-proteins/test
+# GET scaffolds, gffs and transcripts and then run in WS777111-proteins/test
 echo "Fetching scaffolds, transcripts and GFF files..."
 if [ ! -e "scaffolds" ]
 then
@@ -204,7 +205,7 @@ fi
 
 for i in $(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u)
 do
-	#Get scaffold name
+	# Get scaffold name
 	temp=${i#*-}
 	scaffold=${temp%-*-gene-*-mRNA-?}
 	if [ ! -e "scaffolds/${scaffold}.scaffold.fa" ]
@@ -213,7 +214,7 @@ do
 		length=$(tail -n 1 "scaffolds/${scaffold}.scaffold.fa" | head -c -1 | wc -m)
 		echo -e "##gff-version 3\n##sequence-region $scaffold 1 $length" > gffs/${scaffold}.gff
 		cd igv
-		#Create IGV softlinks
+		# Create IGV softlinks
 		ln -sf ../scaffolds/${scaffold}.scaffold.fa
 		ln -sf ../gffs/${scaffold}.gff
 		cd ..
@@ -222,14 +223,12 @@ do
 	grep $i $gff >> gffs/${scaffold}.gff
 done
 
+date=$(date | awk '{print $3 $2 $6}')
 cd scaffolds
-cat *.scaffold.fa > all.scaffolds.fa
+cat *.scaffold.fa > ../all.scaffolds.${date}.fa
 cd ../transcripts
-cat *.transcripts.fa > all.transcripts.fa
+cat *.transcripts.fa > ../all.transcripts.${date}.fa
 cd ../gffs
-cat *.gff > all.gff
+cat *.gff > ../all.${date}.gff
 cd ..
-ln -sf scaffolds/all.scaffolds.fa
-ln -sf transcripts/all.transcripts.fa
-ln -sf gffs/all.gff
 echo "DONE!"

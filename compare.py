@@ -3,10 +3,10 @@ from __future__ import print_function
 import os
 import sys
 
-#Take in a FASTA file and compare sequences
-#Quick comparison of sequences of equal length that appear similar, on the go
-#Tells you if any sequences in a given FASTA file are identical or NOT
-#For better alignments, do a pairwise alignment or multiple sequence alignment
+# Take in a FASTA file and compare sequences
+# Quick comparison of sequences of equal length that appear similar, on the go
+# Tells you if any sequences in a given FASTA file are identical or NOT
+# For better alignments, do a pairwise alignment or multiple sequence alignment
 args = sys.argv[1:]
 
 if len(args) != 1:
@@ -29,8 +29,8 @@ for i in seqs:
 
 listLen = len(seqs)
 
-#Sequences are only considered identical if they are equal in length and residues
-#If one sequence is a partial sequence of another, they are not counted as identical because their lengths differ
+# Sequences are only considered identical if they are equal in length and residues
+# If one sequence is a partial sequence of another, they are not counted as identical because their lengths differ
 matched = False
 for i in range(listLen-1):
 	for j in range(i+1,listLen):

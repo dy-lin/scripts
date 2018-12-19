@@ -3,8 +3,8 @@ from __future__ import print_function
 import os
 import sys
 
-#Given a partial sequence, print to screen the coordinates of the FASTA
-#Mostly used in parsing through gmap -A results where numbering is abysmal, as well as in parsing multiple sequence alignments
+# Given a partial sequence, print to screen the coordinates of the FASTA
+# Mostly used in parsing through gmap -A results where numbering is abysmal, as well as in parsing multiple sequence alignments
 
 args = sys.argv[1:]
 
@@ -25,7 +25,7 @@ count = sequence.count(substring)
 i = 1
 pointer=0
 
-#store sequence as to not lose the original argument
+# Store sequence as to not lose the original argument
 tempSeq = sequence
 print(f"Searching for {substring} in {header}...")
 print(f"Number of matches: {count}")
@@ -42,9 +42,9 @@ try:
 			end=len(substring) + start-1
 			print(f"{start+1} to {end+1}")
 		i+=1
-		#Update tempSeq as to exclude the 'parsed' part of the string since 's.index(i)' only returns the first hit and not others after
-		#This method will make sure all hits are printed
-		#However all indicies are still kept relevant to the original string
+		# Update tempSeq as to exclude the 'parsed' part of the string since 's.index(i)' only returns the first hit and not others after
+		# This method will make sure all hits are printed
+		# However all indicies are still kept relevant to the original string
 		tempSeq=sequence[end+1:]
 except ValueError as error:
-	print("Partial sequence not found.")
+	print("Partial sequence not found.") 

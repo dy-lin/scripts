@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Slices the FASTA at the given coordinates
+# If given one coordinate, strand must be specified
+
 if [ "$#" -ne 3 ]
 then
 	echo "USAGE: $(basename $0) <START> <END> <FASTA file> or"
