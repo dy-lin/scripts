@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Used to 'cross-reference' two files
+# Used to 'cross-reference' two files
 
 # Specific flags accepted only-- if other arguments-- exit
 # Print only missing items if -m
@@ -11,7 +11,8 @@ if [[ "$#" -eq 4 && "$1" == "-m" && "$1" == "-f" ]]
 then
 	missing=true
 	found=true
-	shift shift
+	shift
+	shift
 elif [[ "$#" -eq 4 && "$1" == "-f" && "$1" == "-m" ]]
 then
 	missing=true

@@ -2,8 +2,8 @@
 
 if [[ "$#" -lt 1  || "$#" -gt 2 ]]
 then
-	echo "USAGE: $0 [DATE] <FILES or PATTERN>"
-	echo "Example: $0 DDMMMYYYY *"
+	echo "USAGE: $(basename $0) [DATE] <FILES or PATTERN>"
+	echo "Example: $(basename $0) DDMMMYYYY *"
 	echo "[DATE] is optional-- if one is not provided, today's date is used by default."
 	exit 1
 fi
