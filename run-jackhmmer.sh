@@ -10,10 +10,10 @@ scaffolds=$7
 transcripts=$8
 gff=$9
 
-if [ "$#" -ne 9 ]
+if [[ "$#" -ne 9 && "$#" -ne 10 ]]
 then
-	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <maker predicted proteins> <# of iterations> <sweep start> <sweep end> <spruce scaffolds> <spruce transcripts> <spruce GFF>"
-	echo "To run jackhmmer without a sweep, set:\n<sweep start> = <sweep end>."
+	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end> <scaffolds> <transcripts> <GFF> <species>"
+	echo -e "\tTo run jackhmmer without a sweep, set: <sweep start> = <sweep end>"
 	exit 1
 fi
 
@@ -101,6 +101,7 @@ then
 			blastp -db guide-blast -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48
 			# Filter blastp results for 99% identity sequences
 			awk '{if($3>99) print $2}' guide-blast.blastp | sort -u > guide-proteins.txt
+			seqtk subseq $database guide-proteins.txt > guide-proteins.faa
 		fi
 
 		# See what threshold we lose these proteins - do a jackhmmer sweep where grep for guide-proteins at each threshold
@@ -122,6 +123,10 @@ then
 			then
 				end=$begin
 				begin=$((begin-difference))
+				if [ "$begin" -eq 0 ]
+				then
+					begin=$((begin+1))
+				fi
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
@@ -180,55 +185,68 @@ then
 	echo "Running seqtk..."
 	seqtk subseq $database <(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u) > jackhmmer-blast-hits.faa
 fi
-
-# GET scaffolds, gffs and transcripts and then run in WS777111-proteins/test
-echo "Fetching scaffolds, transcripts and GFF files..."
-if [ ! -e "scaffolds" ]
+if [[ ! -z "${10}" && "${10}" == "spruce" ]]
 then
-	mkdir scaffolds
-fi
-
-if [ ! -e "transcripts" ]
-then
-	mkdir transcripts
-fi
-
-if [ ! -e "gffs" ]
-then
-	mkdir gffs
-fi
-
-if [ ! -e "igv" ]
-then
-	mkdir igv
-fi
-
-for i in $(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u)
-do
-	# Get scaffold name
-	temp=${i#*-}
-	scaffold=${temp%-*-gene-*-mRNA-?}
-	if [ ! -e "scaffolds/${scaffold}.scaffold.fa" ]
+	# GET scaffolds, gffs and transcripts and then run in WS777111-proteins/test
+	echo "Fetching scaffolds, transcripts and GFF files..."
+	if [ ! -e "scaffolds" ]
 	then
-		seqtk subseq $scaffolds <(echo $scaffold) > scaffolds/${scaffold}.scaffold.fa
-		length=$(tail -n 1 "scaffolds/${scaffold}.scaffold.fa" | head -c -1 | wc -m)
-		echo -e "##gff-version 3\n##sequence-region $scaffold 1 $length" > gffs/${scaffold}.gff
-		cd igv
-		# Create IGV softlinks
-		ln -sf ../scaffolds/${scaffold}.scaffold.fa
-		ln -sf ../gffs/${scaffold}.gff
-		cd ..
+		mkdir scaffolds
 	fi
-	seqtk subseq $transcripts <(echo $i) >> transcripts/${scaffold}.transcripts.fa
-	grep $i $gff >> gffs/${scaffold}.gff
-done
 
-date=$(date | awk '{print $3 $2 $6}')
-cd scaffolds
-cat *.scaffold.fa > ../all.scaffolds.${date}.fa
-cd ../transcripts
-cat *.transcripts.fa > ../all.transcripts.${date}.fa
-cd ../gffs
-cat *.gff > ../all.${date}.gff
-cd ..
+	if [ ! -e "transcripts" ]
+	then
+		mkdir transcripts
+	fi
+
+	if [ ! -e "gffs" ]
+	then
+		mkdir gffs
+	fi
+
+	if [ ! -e "igv" ]
+	then
+		mkdir igv
+	fi
+
+	for i in $(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u)
+	do
+		# Get scaffold name
+		temp=${i#*-}
+		scaffold=${temp%-*-gene-*-mRNA-?}
+		if [ ! -e "scaffolds/${scaffold}.scaffold.fa" ]
+		then
+			seqtk subseq $scaffolds <(echo $scaffold) > scaffolds/${scaffold}.scaffold.fa
+			length=$(tail -n 1 "scaffolds/${scaffold}.scaffold.fa" | head -c -1 | wc -m)
+			echo -e "##gff-version 3\n##sequence-region $scaffold 1 $length" > gffs/${scaffold}.gff
+			cd igv
+			# Create IGV softlinks
+			ln -sf ../scaffolds/${scaffold}.scaffold.fa
+			ln -sf ../gffs/${scaffold}.gff
+			cd ..
+		fi
+		seqtk subseq $transcripts <(echo $i) >> transcripts/${scaffold}.transcripts.fa
+		grep $i $gff >> gffs/${scaffold}.gff
+	done
+
+	date=$(date | awk '{print $3 $2 $6}')
+	cd scaffolds
+	cat *.scaffold.fa > ../all.scaffolds.${date}.fa
+	cd ../transcripts
+	cat *.transcripts.fa > ../all.transcripts.${date}.fa
+	cd ../gffs
+	cat *.gff > ../all.${date}.gff
+	cd ..
+else
+	awk 'NR==1 || NR==7' $gff > amp.gff
+	# Honeybee data is extracted from NCBI and named differently
+	for i in $(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u)
+	do
+		# No need to fetch scaffolds, honeybee genome is in one piece
+		# Fetch transcripts
+		seqtk subseq $transcripts <(echo $i) >> amp.transcripts.fa
+		# Fetch GFF
+		grep $i $gff >> amp.gff
+	done
+fi
 echo "DONE!"
