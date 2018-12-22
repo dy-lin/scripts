@@ -121,11 +121,16 @@ then
 			# If sweep = 2, the sweep start is too low
 			elif [ "$sweep" -eq 2 ]
 			then
+				if [ "$begin" -eq 1 ]
+				then
+					echo "Sweep start cannot be lowered any lower. Your guide proteins are nowhere to be found."
+					exit 1
+				fi
 				end=$begin
 				begin=$((begin-difference))
 				if [ "$begin" -eq 0 ]
 				then
-					begin=$((begin+1))
+					begin=1
 				fi
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step

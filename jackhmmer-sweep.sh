@@ -39,8 +39,17 @@ do
 			# If count is 0 AND on the first threshold tried, the threshold is too high and needs to be lowered
 			if [ "$i" -eq "$begin" ]
 			then
-				echo "Your <sweep start> value is too high...Lowering it by $step."
-				exit 2
+				difference=$((end-begin))
+				if [[ "$((begin-difference))" -le 0 ]] && [[ "$begin" -ne 1 ]]
+				then
+					echo "Your <sweep start> value is too high...Lowering it to 1."
+				else
+					if [ "$begin" -ne 1 ]
+					then
+						echo "Your <sweep start> value is too high...Lowering it to $((begin-difference))."
+					fi
+				fi
+					exit 2
 			else
 				echo "Bit score threshold $i loses guide protein ${guide}..."
 			#	echo "...${guide} is not present when the threshold is ${threshold}." 
