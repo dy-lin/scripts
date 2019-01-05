@@ -46,7 +46,10 @@ for index, base in enumerate(sequence):
 			lengths.append(end-start+1)
 
 # The largest gap length
-maxgap=max(lengths)
+if len(lengths) != 0:
+	maxgap=max(lengths)
+else:
+	maxgap=0
 outFile=[]
 num_gaps = len(gaps)
 
@@ -143,7 +146,7 @@ if num_gaps !=0:
 				scaftigs.append([borders[i][1]+1,borders[i+1][0]-1])
 		with open(scaftigsOUT, "w") as f:
 			for seq in scaftigs:
-				f.write(header + "-" + str(seq[0]) + ":" + str(seq[1]) + " Length: " + str(seq[1]-seq[0]+1) +  "\n")
+				f.write(header.rstrip() + "-" + str(seq[0]) + ":" + str(seq[1]) + " Length: " + str(seq[1]-seq[0]+1) +  "\n")
 				slice = sequence[seq[0]-1:seq[1]]
 				f.write(slice + "\n")
 

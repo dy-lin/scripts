@@ -123,7 +123,7 @@ then
 			then
 				if [ "$begin" -eq 1 ]
 				then
-					echo "Sweep start cannot be lowered any lower. Your guide proteins are nowhere to be found."
+					echo "<sweep start> cannot be lowered anymore. Your guide proteins are nowhere to be found."
 					exit 1
 				fi
 				end=$begin
