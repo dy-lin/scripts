@@ -18,13 +18,17 @@ else
 fi
 for line in $(head -n $count <(sort -u $file))
 do
-	if [[ $(echo $line | grep -c '_1_001') -gt 0 ]]
+	if [[ $(echo $line | grep -c '_[0-9]_1_001[_.]') -gt 0 ]]
 	then
 		pair=$(echo $line | sed 's/_1_001/_2_001/')
 		echo "$line $pair" >> reads.in
-	elif [[ $(echo $line | grep -c '_R1_') -gt 0 ]]
+	elif [[ $(echo $line | grep -c '_R1[_.]') -gt 0 ]]
 	then
-		pair=$(echo $line | sed 's/_R1_/_R2_/')
+		pair=$(echo $line | sed 's/_R1/_R2/')
+		echo "$line $pair" >> reads.in
+	elif [[ $(echo $line | grep -c '[_-]first') -gt 0 ]]
+	then
+		pair=$(echo $line | sed 's/first/second/')
 		echo "$line $pair" >> reads.in
 	else
 		echo "Incompatible read names."
