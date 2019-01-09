@@ -7,7 +7,8 @@ import sys
 args = sys.argv[1:]
 
 if len(args) != 5:
-	print(f"USAGE: {sys.argv[0]} <mRNA start> <intron start> <intron end> <mRNA end> <FASTA file>")
+	print(f"USAGE: {sys.argv[0]} <mRNA start> <intron start> <intron end> <mRNA end> <FASTA file>",file=sys.stderr)
+	print(f"DESCRIPTION: Takes mRNA and intron coordinates with the corresponding FASTA file (scaffold) and removes the introns so as to output a spliced mRNA transcript.",file=sys.stderr)
 	sys.exit(1)
 
 RNAstart=args[0]

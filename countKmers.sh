@@ -2,7 +2,8 @@
 
 if [[ "$#" -ne 2 ]]
 then
-	echo "USAGE: $(basename $0) <FASTQ/A file> <K-mer length>"
+	echo "USAGE: $(basename $0) <FASTQ/A file> <K-mer size>" 1>&2
+	echo "DESCRIPTION: Takes a FASTQ/A file and k-mer size and outputs the number of unique k-mers." 1>&2
 	exit 1
 fi
 
@@ -14,7 +15,7 @@ zip=${file#*.}
 # If <() is used
 if [[ ! -e "$file" ]]
 then
-	echo "File not found."
+	echo "File not found." 1>&2
 	exit 1
 fi
 
@@ -28,7 +29,7 @@ then
 	then
 		ext="fa"
 	else
-		echo "Unsupported file type."
+		echo "Unsupported file type." 1>&2
 		exit 1
 	fi
 fi
@@ -59,7 +60,7 @@ then
 		awk '/^@/ {x=NR+1;next}(NR<=x){print}' $i
 	done > $processed
 else
-	echo "Unsupported file type."
+	echo "Unsupported file type." 1>&2
 	exit 1
 fi
 

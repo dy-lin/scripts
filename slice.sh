@@ -5,8 +5,9 @@
 
 if [ "$#" -ne 3 ]
 then
-	echo "USAGE: $(basename $0) <START> <END> <FASTA file> or"
-	echo "USAGE: $(basename $0) <POSITION> <STRAND> <FASTA file>, where STRAND is + or -"
+	echo "USAGE: $(basename $0) <START> <END> <FASTA file> or" 1>&2
+	echo "USAGE: $(basename $0) <POSITION> <STRAND> <FASTA file>, where STRAND is + or -" 1>&2
+	echo "DESCRIPTION: Takes start and end coordinates and extracts that segment from a FASTA file, or takes a position and strand orientation and extracts that one base from that FASTA file." 1>&2
 	exit 1
 
 fi
@@ -20,7 +21,7 @@ elif [ "$1" -lt "$2" ]
 then
 	slice.py $1 $2 <(seqtk seq $3)
 else
-	echo "START and END cannot be the same. If one base at a specific position is needed:"
-	echo "USAGE: $(basename $0) <POSITION> <STRAND> <FASTA file>, where STRAND is + or -"
+	echo "START and END cannot be the same. If one base at a specific position is needed:" 1>&2
+	echo "USAGE: $(basename $0) <POSITION> <STRAND> <FASTA file>, where STRAND is + or -" 1>&2
 fi
 

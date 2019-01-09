@@ -9,7 +9,8 @@ import sys
 args = sys.argv[1:]
 
 if len(args) != 4:
-	print("Usage: %s <Input File> <Base Position> <Original Base> <New Base>" % sys.argv[0])
+	print(f"USAGE: {sys.argv[0]} <Input File> <Base Position> <Original Base> <New Base>",file=sys.stderr)
+	print(f"DESCRIPTION: Takes a FASTA file, a base position, the original base and the new base as input, outputting the newly modified FASTA file.",file=sys.stderr)
 	sys.exit(1)
 
 # Get current working directory

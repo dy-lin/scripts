@@ -29,15 +29,15 @@ then
 	# Check if arguments have the correct file extensions
 	if [[ "$assembly" != *.fa && "$assembly" != *.fasta && "$assembly" != *.f?.gz ]]
 	then
-		echo "Three arguments detected. Invalid assembly file."
-		echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>"
+		echo "Three arguments detected. Invalid assembly file." 1>&2
+		echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>" 1>&2
 		exit 1
 	fi
 
 	if [[ "$readsf" != *R?.f?.gz || "$readsb" != *R?.f?.gz ]]
 	then
-		echo "Three arguments detected. Invalid reads files."
-		echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>"
+		echo "Three arguments detected. Invalid reads files." 1>&2
+		echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>" 1>&2
 		exit 1
 	fi
 	bwa index $assembly
@@ -48,7 +48,8 @@ then
 	echo "Coverage: ${median}x"
 # Or the arguments are invalid
 else
-	echo "USAGE: $(basename $0) <BAM file (preferably sorted)> OR"
-	echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>"
+	echo "USAGE: $(basename $0) <BAM file (preferably sorted)> OR" 1>&2
+	echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>" 1>&2
+	echo "DESCRIPTION: Takes a sorted BAM file or a FASTA file with assembly reads and outputs the coverage." 1>&2
 	exit 1
 fi

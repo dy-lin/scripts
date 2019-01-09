@@ -5,7 +5,8 @@
 
 if [ "$#" -ne 1 ]
 then
-	echo "USAGE: $(basenmae $0) <GFF file>"
+	echo "USAGE: $(basenmae $0) <GFF file>" 1>&2
+	echo "DESCRIPTION: Takes a GFF file, extracts the intron features and outputs the intron lengths." 1>&2
 	exit 1
 fi
 gff=$1

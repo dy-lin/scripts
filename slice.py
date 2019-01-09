@@ -5,10 +5,6 @@ import os
 import sys
 
 args = sys.argv[1:]
-# This part unnecessary as it is in the bash script that calls this python script
-# if len(args) != 3:
-#	print("Usage: %s <Start> <End> <Input File>" % sys.argv[0])
-#	sys.exit(1)
 
 x=int(args[0])
 y=args[1]

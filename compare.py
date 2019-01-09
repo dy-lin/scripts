@@ -10,7 +10,8 @@ import sys
 args = sys.argv[1:]
 
 if len(args) != 1:
-	print(f"Usage: {sys.argv[0]} <FASTA file>")
+	print(f"USAGE: {sys.argv[0]} <FASTA file>",file=sys.stderr)
+	print(f"DESCRIPTION: Takes a FASTA file as input, and outputs whether or not the sequences are identical.",file=sys.stderr)
 	sys.exit(1)
 
 infile = args[0]

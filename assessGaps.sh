@@ -2,7 +2,8 @@
 
 if [ "$#" -eq 0 ]
 then
-	echo "USAGE: $(basename $0) <FASTA file> [GFF file]"
+	echo "USAGE: $(basename $0) <FASTA file> [GFF file]" 1>&2
+	echo "DESCRIPTION: Takes a FASTA file (and optionally a GFF file) and outputs a gap summary table and a scaftig FASTA file. If a GFF file is also given, features containing gaps are also listed." 1>&2
 	exit 1
 fi
 

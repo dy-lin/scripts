@@ -7,7 +7,8 @@ import sys
 args = sys.argv[1:]
 
 if len(args) != 2 and len(args) !=1:
-	print("Usage: %s <FASTA file> [GFF file]" % sys.argv[0])
+	print(f"USAGE: {sys.argv[0]} <FASTA file> [GFF file]",file=sys.stderr)
+	print(f"DESCRIPTION: Takes a FASTA file and outputs its gaps and a scaftig file. If a GFF file is given, features containing gaps will also be listed.",file=sys.stderr)
 	sys.exit(1)
 
 file = args[0]

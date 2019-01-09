@@ -12,8 +12,9 @@ gff=$9
 
 if [[ "$#" -ne 9 && "$#" -ne 10 ]]
 then
-	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end> <scaffolds> <transcripts> <GFF> <species>"
-	echo -e "\tTo run jackhmmer without a sweep, set: <sweep start> = <sweep end>"
+	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end> <scaffolds> <transcripts> <GFF> <species>" 1>&2
+	echo -e "\tTo run jackhmmer without a sweep, set: <sweep start> = <sweep end>" 1>&2
+	echo "DESCRIPTION: Runs jackhmmer of literature AMPs against a protein database in order to find a specific class of AMP using homology-based search. Sweep is run as to find the best threshold to run jackhmmer." 1>&2
 	exit 1
 fi
 
@@ -63,8 +64,8 @@ then
 	# If difference is not divisble by the assigned step, ask user to change it
 	while [[ $((difference%step)) -ne 0 && "$difference" -ne 0 ]]
 	do
-		echo "The difference between <sweep start> and <sweep end> must be a multiple of $step."
-		echo "Please enter a new <sweep start> and <sweep end> on the line below (separated by a space). To run jackhmmer at a specific threshold (no sweep), please enter the desired threshold as a single value."
+		echo "The difference between <sweep start> and <sweep end> must be a multiple of $step." 1>&2
+		echo "Please enter a new <sweep start> and <sweep end> on the line below (separated by a space). To run jackhmmer at a specific threshold (no sweep), please enter the desired threshold as a single value." 1>&2
 		read newbegin newend
 		if [ ! -z "$newbegin" ] && [ -z "$newend" ]
 		then
@@ -123,7 +124,7 @@ then
 			then
 				if [ "$begin" -eq 1 ]
 				then
-					echo "<sweep start> cannot be lowered anymore. Your guide proteins are nowhere to be found."
+					echo "<sweep start> cannot be lowered anymore. Your guide proteins are nowhere to be found." 1>&2
 					exit 1
 				fi
 				end=$begin
