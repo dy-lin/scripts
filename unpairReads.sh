@@ -17,7 +17,7 @@ if [[ "$#" -ne 1 || "$gethelp" = true ]]
 then
 	echo "USAGE: $PROGRAM <list of read pairs>" 1>&2
 	echo "DESCRIPTION: Takes a list of reads and splits the read pairs into two separate files." 1>&2
-	echo -e "OPTIONS:\n\t\t-h\tLoad help menu\n\t\t-v\tVerbose (prints contents of file on screen)" 1>&2
+	echo -e "OPTIONS:\n\t-h\tLoad help menu\n\t-v\tVerbose (prints contents of file on screen)" 1>&2
 	exit 1
 fi
 
@@ -40,19 +40,18 @@ file=temp.txt
 if [[ "$(head -n 1 $file | awk '{print NF}')" -gt 2 ]]
 then
 	echo "$(head -n 1 $file | awk '{print NF}') reads on the same line detected..." 1>&2
-	# separate them onto separate lines
-	cat $file | tr ' ' '\n' | sed '/^$/d' > temp.in
-	cp temp.in $file
-	rm temp.in
+	pairReads.sh $file > temp.out
+	cp temp.out $file
+	rm temp.out
 fi
 
 # if all read pairs are individually on separate line
 if [[ "$(head -n 1 $file | awk '{print NF}')" -eq 1 ]]
 then
 	echo "$(wc -l $file | awk '{print $1}') lines with one read per line detected..." 1>&2
-	pairReads.sh $file > temp.in
-	cp temp.in $file
-	rm temp.in
+	pairReads.sh $file > temp.out
+	cp temp.out $file
+	rm temp.out
 fi
 
 # if there are pairs on each line
@@ -79,4 +78,3 @@ if [[ -e "$file" ]]
 then
 	rm "$file"
 fi
-
