@@ -56,7 +56,7 @@ do
 			then
 				echo "Sequence(s) from $(basename $file1):"
 				grep -wB1 "$line" $file1 | awk '/^>/ {print}' | sed 's/^>/\t>/'
-				echo "Identical sequence(s) from $(basename $file2):"
+				echo -e "\nIdentical sequence(s) from $(basename $file2):"
 				grep -wB1 "$line" $file2 | awk '/^>/ {print}' | sed 's/^>/\t>/'
 				echo -e "\n----------------------------------------------\n"
 			fi
@@ -74,7 +74,7 @@ do
 			then
 				echo "Sequence(s) from $(basename $file1):"
 				grep -B1 "$line" $file1 | awk '/^>/ {print}' | sed 's/^>/\t>/'
-				echo "Identical and Partial Match sequence(s) from $(basename $file2):"
+				echo -e "\nIdentical and Partial Match sequence(s) from $(basename $file2):"
 				grep -B1 "$line" $file2 | awk '/^>/ {print}' | sed 's/^>/\t>/'
 				echo -e "\n----------------------------------------------\n"
 			fi

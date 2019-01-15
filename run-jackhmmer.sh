@@ -1,4 +1,16 @@
 #!/bin/bash
+PROGRAM=$(basename $0)
+organism="honeybee"
+gethelp=false
+while getopts :hO: opt
+do
+	case $opt in
+		h) gethelp=true;;
+		o) organism="$OPTARG";;
+		\?) echo "$PROGRAM: invalid option: $OPTARG" >&2; exit 1;;
+	esac
+done
+shift $((OPTIND-1))
 
 AMP=$1
 lit=$2
@@ -10,7 +22,8 @@ scaffolds=$7
 transcripts=$8
 gff=$9
 
-if [[ "$#" -ne 9 && "$#" -ne 10 ]]
+
+if [[ "$#" -ne 9 && "$gethelp" = true ]]
 then
 	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end> <scaffolds> <transcripts> <GFF> <species>" 1>&2
 	echo -e "\tTo run jackhmmer without a sweep, set: <sweep start> = <sweep end>" 1>&2
@@ -191,7 +204,7 @@ then
 	echo "Running seqtk..."
 	seqtk subseq $database <(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u) > jackhmmer-blast-hits.faa
 fi
-if [[ ! -z "${10}" && "${10}" == "spruce" ]]
+if [[ "$organism" == "spruce" ]]
 then
 	# GET scaffolds, gffs and transcripts and then run in WS777111-proteins/test
 	echo "Fetching scaffolds, transcripts and GFF files..."
