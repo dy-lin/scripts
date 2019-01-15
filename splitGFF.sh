@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu -o pipefail
 gff=$1
 
 # Split a merged GFF of various scaffolds (e.g. of one spruce genotype) into its respective GFF files for individual viewing in IGV

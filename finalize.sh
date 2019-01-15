@@ -3,7 +3,7 @@
 # Takes a processed GeSeq and EMBOSS Seqret generated GFF file and renumbers IDs, etc. based on Genbank Submission requirements
 # Processed: duplicates have been removed as to not interfere with the numbering process
 # Scaffold will be renamed in this script.
-
+set -eu -o pipefail
 if [ "$#" -ne 1 ]
 then
 	echo "USAGE: $(basename $0) <GFF file>" 1>&2

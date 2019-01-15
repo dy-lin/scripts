@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu -o pipefail
 if [[ "$#" -lt 1  || "$#" -gt 2 ]]
 then
 	echo "USAGE: $(basename $0) [DATE] <FILES or PATTERN>" 1>&2

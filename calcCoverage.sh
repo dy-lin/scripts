@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu -o pipefail
 alignment=$1
 
 # Remove the file extension

@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu -o pipefail
 # Slices the FASTA at the given coordinates
 # If given one coordinate, strand must be specified
 

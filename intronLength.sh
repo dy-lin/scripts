@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu -o pipefail
 # Extract intron lengths given a GFF file
 # Prints results to screen, use bash redirection to save file to a tsv
 

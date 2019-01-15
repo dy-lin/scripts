@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu -o pipefail
 if [[ "$#" -ne 2 ]]
 then
 	echo "USAGE: $(basename $0) <FASTQ/A file> <K-mer size>" 1>&2

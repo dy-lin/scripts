@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu -o pipefail
 # Find identical sequences when sequence IDs are different
 partial=false
 gethelp=false

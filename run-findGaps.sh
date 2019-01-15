@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu -o pipefail
 if [ "$#" -eq 0 ]
 then
 	echo "USAGE: $(basename $0) <FASTA file> [GFF file]" 1>&2
