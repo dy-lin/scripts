@@ -4,12 +4,16 @@ set -eu -o pipefail
 partial=false
 gethelp=false
 delete=false
+merge=false
+inplace=false
 PROGRAM=$(basename $0)
-while getopts :hpd opt
+while getopts :hpdim opt
 do
 	case $opt in
 		d) delete=true;;
 		h) gethelp=true;;
+		i) inplace=true;delete=true;;
+		m) merge=true;;
 		p) partial=true;;
 		\?) echo "$PROGRAM: invalid option: $opt" >&2; exit 1;;
 	esac
@@ -21,7 +25,7 @@ if [[ ( "$#" -ne 1 && "$#" -ne 2 ) || "$gethelp" = true ]]
 then
 	echo "USAGE: $PROGRAM [-dhp] <FASTA file>" >&2
 	echo "DESCRIPTION: Checks for duplicates in sequences (not sequence IDs). If given one FASTA file, checks for duplicate sequences within itself. If given two FASTA files, checks for duplicates among the two." >&2
-	echo -e "OPTIONS:\n\t-d\tDelete the matches\n\t-h\tShow help menu\n\t-p\tInclude partial matches" >&2
+	echo -e "OPTIONS:\n\t-d\tDelete the matches\n\t-h\tShow help menu\n\t-i\tDeletes matches in place (implies -d)\n\t-m\tMerge the two newly modified files\n\t-p\tInclude partial matches" >&2
 	exit 1
 fi
 
@@ -156,7 +160,76 @@ do
 		fi
 	fi
 done
+
+# Check for duplicate seuqneces within file 1
+if [[ "$delete" = true ]]
+then
+	for line in $(awk '!/^>/ {print}' $output1 | sort -u)
+	do
+		if [[ "$partial" = false ]]
+		then
+			if [[ "$(grep -c "$line" $output1)" -gt 1 ]]
+			then
+				for sequence in $(grep -B1 "$line" $output1 | awk '/^>/ {print}' | tail -n +2)
+				do
+					sed -i "/$sequence/,+1 d" $output1
+				done
+			fi
+		else
+			if [[ "$(grep -wc "$line" $output1)" -gt 1 ]]
+			then
+				for sequence in $(grep -wB1 "$line" $output1 | awk '/^>/ {print}' | tail -n +2)
+				do
+					sed -i "/$sequence/,+1 d" $output1
+				done
+			fi
+		fi
+	done
+fi
+
+
+# Check for duplicate sequences in file 2 as well
 if [[ "$delete" = true && "$#" -eq 2 ]]
 then
-	cat $output1 $output2 > ${filename1}.${filename2}.merged.${ext1}
+	for line in $(awk '!/^>/ {print}' $output2 | sort -u)
+	do
+		if [[ "$partial" = false ]]
+		then
+			if [[ "$(grep -c "$line" $output2)" -gt 1 ]]
+			then
+				for sequence in $(grep -B1 "$line" $output2 | awk '/^>/ {print}' | tail -n +2)
+				do
+					sed -i "/$sequence/,+1 d" $output2
+				done
+			fi
+		else
+			if [[ "$(grep -wc "$line" $output2)" -gt 1 ]]
+			then
+				for sequence in $(grep -wB1 "$line" $output2 | awk '/^>/ {print}' | tail -n +2)
+				do
+					sed -i "/$sequence/,+1 d" $output2
+				done
+			fi
+		fi
+	done
+fi
+if [[ "$inplace" = true ]]
+then
+	if [[ "$#" -eq 2 ]]
+	then
+		mv $output1 $file1
+		mv $output2 $file2
+	else
+		mv $output1 $file1
+	fi
+fi
+
+if [[ "$merge" = true && "$#" -eq 2 ]]
+then
+	if [[ "$inplace" = true ]] 
+	then
+		cat $file1 $file2 > ${filename1}.${filename2}.merged.${ext1}
+	else
+		cat $output1 $output2 > ${filename1}.${filename2}.merged.${ext1}
+	fi
 fi
