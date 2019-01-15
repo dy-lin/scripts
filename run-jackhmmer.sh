@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eu -o pipefail
 PROGRAM=$(basename $0)
 organism="honeybee"
 gethelp=false
@@ -23,11 +24,12 @@ transcripts=$8
 gff=$9
 
 
-if [[ "$#" -ne 9 && "$gethelp" = true ]]
+if [[ "$#" -ne 9 || "$gethelp" = true ]]
 then
 	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end> <scaffolds> <transcripts> <GFF> <species>" 1>&2
 	echo -e "\tTo run jackhmmer without a sweep, set: <sweep start> = <sweep end>" 1>&2
 	echo "DESCRIPTION: Runs jackhmmer of literature AMPs against a protein database in order to find a specific class of AMP using homology-based search. Sweep is run as to find the best threshold to run jackhmmer." 1>&2
+	echo -e "OPTIONS:\n\t-h\t\tShow help menu\n\t-O <organism>\tCurrently supports 'spruce' or 'honeybee'" 1>&2
 	exit 1
 fi
 
