@@ -312,25 +312,29 @@ then
 	then
 		echo "There are $count sequence(s) that are entirely or partially in $basefile1."
 		#echo "Number of identical and partial match sequence(s) in $basefile1: $count"
-		if [[ "$inplace" = true ]]
+		if [[ "$delete" = true ]]
 		then
 			echo "Of those identical and partial match sequence(s), $keepcount were kept and its $delcount duplicates were removed."
-			echo "Changes made directly to $basefile1."
-		else
-			echo "Of those identical and partial match sequence(s), $keepcount were kept and its $delcount duplicates were removed."
-			echo "Writing modified $basefile1 to $(basename $output1)."
+			if [[ "$inplace" = true ]]
+			then
+				echo "Changes made directly to $basefile1."
+			else 
+				echo "Writing modified $basefile1 to $(basename $output1)."
+			 fi
 		fi
 
 	else
 		echo "There are $count identical sequence(s) within $basefile1."
 	#	echo "Number of identical sequence(s) in $basefile: $count"
-		if [[ "$inplace" = true ]]
+		if [[ "$delete" = true ]]
 		then
 			echo "Of those identical sequence(s), $keepcount were kept, and its $delcount duplicates were removed."
-			echo "Changes made directly to $basefile1."
-		else
-			echo "Of those identical sequence(s), $keepcount were kept, and its $delcount duplicates were removed."
-			echo "Writing modified $basefile1 to $(basename $output1)."
+			if [[ "$inplace" = true ]]
+			then
+				echo "Changes made directly to $basefile1."
+			else
+				echo "Writing modified $basefile1 to $(basename $output1)."
+			fi
 		fi
 	fi
 fi
