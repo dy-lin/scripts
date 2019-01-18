@@ -59,7 +59,7 @@ then
 	else
 		if [[ "$verbose" = true ]]
 		then
-			echo "----------------------------------------------"
+			echo -e "----------------------------------------------"
 			echo "Identical sequences in $(basename $file1):"
 		fi
 	fi
@@ -75,7 +75,7 @@ if [[ "$delete" = true ]]
 then
 	filename1=${basefile1%.*}
 	ext1=${basefile1##*.}
-	output1=${dir1}/${filename1}.duplicatesRemoved.${ext1}
+	output1=${dir1}/${filename1}.unique.${ext1}
 	cp $file1 $output1
 	if [ "$#" -eq 2 ]
 	then
@@ -83,14 +83,15 @@ then
 		basefile2=$(basename $file2)
 		filename2=${basefile2%.*}
 		ext2=${basefile2##*.}
-		output2=${dir2}/${filename2}.duplicatesRemoved.${ext2}
+		output2=${dir2}/${filename2}.unique.${ext2}
 		cp $file2 $output2
 	fi
 fi
 # If working with two files, print duplicate sequences' seqIDs from each file, adding a tab before each seqID
 # If working with one file, print all duplicate sequences' seqIDs
-
-
+IFS=$'\n'
+delcount=0
+keepcount=0
 for line in $(awk '!/^>/ {print}' $file1 | sort -u)
 do
 	if [[ "$partial" = false ]]
@@ -112,6 +113,8 @@ do
 					then
 						for sequence in $(grep -wB1 "$line" $file1 | awk '/^>/ {print}' | tail -n +2)
 						do
+							# escape backslashes, forward slashes, and square brackets
+							sequence=$(echo $sequence | sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 							sed -i "/$sequence/,+1 d" $output1
 						done
 					fi
@@ -126,6 +129,7 @@ do
 				then
 					for sequence in $(grep -wB1 "$line" $file2 | awk '/^>/ {print}')
 					do
+						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 						sed -i "/$sequence/,+1 d" $output2
 					done
 				fi
@@ -134,6 +138,7 @@ do
 					echo -e "\n----------------------------------------------\n"
 				fi
 			fi
+		# if $# = 1
 		else
 			if [[ "$(grep -wc "$line" $file2)" -gt 1 ]]
 			then
@@ -145,10 +150,13 @@ do
 				count=$((count + hits))
 				if [[ "$delete" = true ]]
 				then
-					for sequence in $(grep -wB1 "$line" $file1 | awk '/^>/ {print}')
+					for sequence in $(grep -wB1 "$line" $file1 | awk '/^>/ {print}' | tail -n +2)
 					do
+						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 						sed -i "/$sequence/,+1 d" $output1
+						delcount=$((delcount+1))
 					done
+					keepcount=$((keepcount+1))
 				fi
 				if [[ "$verbose" = true ]]
 				then
@@ -175,6 +183,7 @@ do
 					then
 						for sequence in $(grep -B1 "$line" $file1 | awk '/^>/ {print}' | tail -n +2)
 						do
+							sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 							sed -i "/$sequence/,+1 d" $output1
 						done
 					fi
@@ -189,6 +198,7 @@ do
 				then
 					for sequence in $(grep -B1 "$line" $file2 | awk '/^>/ {print}')
 					do
+						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g') 
 						sed -i "/$sequence/,+1 d" $output2
 					done
 				fi
@@ -208,10 +218,13 @@ do
 				count=$((count + hits))
 				if [[ "$delete" = true ]]
 				then
-					for sequence in $(grep -B1 "$line" $file1 | awk '/^>/ {print}')
+					for sequence in $(grep -B1 "$line" $file1 | awk '/^>/ {print}' | tail -n +2)
 					do
+						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 						sed -i "/$sequence/,+1 d" $output1
+						delcount=$((delcount+1))
 					done
+					keepcount=$((keepcount+1))
 				fi
 				if [[ "$verbose" = true ]]
 				then
@@ -259,6 +272,7 @@ then
 				# if delete = true, remove all but the first sequence from file2
 				for sequence in $(grep -B1 "$line" $output2 | awk '/^>/ {print}' | tail -n +2)
 				do
+					sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g'| sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 					sed -i "/$sequence/,+1 d" $output2
 				done
 			fi
@@ -278,6 +292,7 @@ then
 				# if delete = true, remove all of those from file1
 				for sequence in $(grep -B1 "$line" $output1 | awk '/^>/ {print}')
 				do
+					sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 					sed -i "/$sequence/,+1 d" $output1
 				done
 			fi
@@ -297,9 +312,26 @@ then
 	then
 		echo "There are $count sequence(s) that are entirely or partially in $basefile1."
 		#echo "Number of identical and partial match sequence(s) in $basefile1: $count"
+		if [[ "$inplace" = true ]]
+		then
+			echo "Of those identical and partial match sequence(s), $keepcount were kept and its $delcount duplicates were removed."
+			echo "Changes made directly to $basefile1."
+		else
+			echo "Of those identical and partial match sequence(s), $keepcount were kept and its $delcount duplicates were removed."
+			echo "Writing modified $basefile1 to $(basename $output1)."
+		fi
+
 	else
-		echo "There are $count identical sequence(s) within $basefile."
+		echo "There are $count identical sequence(s) within $basefile1."
 	#	echo "Number of identical sequence(s) in $basefile: $count"
+		if [[ "$inplace" = true ]]
+		then
+			echo "Of those identical sequence(s), $keepcount were kept, and its $delcount duplicates were removed."
+			echo "Changes made directly to $basefile1."
+		else
+			echo "Of those identical sequence(s), $keepcount were kept, and its $delcount duplicates were removed."
+			echo "Writing modified $basefile1 to $(basename $output1)."
+		fi
 	fi
 fi
 
@@ -319,7 +351,9 @@ then
 			then
 				for sequence in $(grep -B1 "$line" $output1 | awk '/^>/ {print}' | tail -n +2)
 				do
+					sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g') 
 					sed -i "/$sequence/,+1 d" $output1
+					delcount=$((delcount+1))
 				done
 			fi
 		else
@@ -327,7 +361,9 @@ then
 			then
 				for sequence in $(grep -wB1 "$line" $output1 | awk '/^>/ {print}' | tail -n +2)
 				do
+					sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 					sed -i "/$sequence/,+1 d" $output1
+					delcount=$((delcount+1))
 				done
 			fi
 		fi
@@ -346,6 +382,7 @@ then
 			then
 				for sequence in $(grep -B1 "$line" $output2 | awk '/^>/ {print}' | tail -n +2)
 				do
+					sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 					sed -i "/$sequence/,+1 d" $output2
 				done
 			fi
@@ -354,6 +391,7 @@ then
 			then
 				for sequence in $(grep -wB1 "$line" $output2 | awk '/^>/ {print}' | tail -n +2)
 				do
+					sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 					sed -i "/$sequence/,+1 d" $output2
 				done
 			fi
