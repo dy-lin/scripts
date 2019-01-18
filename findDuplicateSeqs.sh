@@ -53,19 +53,19 @@ then
 	then
 		if [[ "$verbose" = true ]]
 		then
-			echo "----------------------------------------------"
+			echo "------------------------------------------------------------------"
 			echo "Identical and Partial Match sequences in $(basename $file1):"
 		fi
 	else
 		if [[ "$verbose" = true ]]
 		then
-			echo -e "----------------------------------------------"
+			echo -e "------------------------------------------------------------------"
 			echo "Identical sequences in $(basename $file1):"
 		fi
 	fi
 		if [[ "$verbose" = true ]]
 		then
-			echo -e "----------------------------------------------"
+			echo -e "------------------------------------------------------------------"
 		fi
 fi
 count=0
@@ -135,7 +135,7 @@ do
 				fi
 				if [[ "$verbose" = true ]]
 				then
-					echo -e "\n----------------------------------------------\n"
+					echo -e "\n------------------------------------------------------------------\n"
 				fi
 			fi
 		# if $# = 1
@@ -160,7 +160,7 @@ do
 				fi
 				if [[ "$verbose" = true ]]
 				then
-					echo -e "\n----------------------------------------------\n"
+					echo -e "\n------------------------------------------------------------------\n"
 				fi	
 			fi
 		fi
@@ -204,7 +204,7 @@ do
 				fi
 				if [[ "$verbose" = true ]]
 				then
-					echo -e "\n----------------------------------------------\n"
+					echo -e "\n------------------------------------------------------------------\n"
 				fi
 			fi
 		else
@@ -228,7 +228,7 @@ do
 				fi
 				if [[ "$verbose" = true ]]
 				then
-					echo -e "\n----------------------------------------------\n"
+					echo -e "\n------------------------------------------------------------------\n"
 				fi
 			fi
 		fi
@@ -300,7 +300,7 @@ then
 			then
 				if [[ "$duplicate" = false ]]
 				then
-					echo -e "\n----------------------------------------------\n"
+					echo -e "\n------------------------------------------------------------------\n"
 				fi
 			fi
 		fi
@@ -312,28 +312,33 @@ then
 	then
 		echo "There are $count sequence(s) that are entirely or partially in $basefile1."
 		#echo "Number of identical and partial match sequence(s) in $basefile1: $count"
-		if [[ "$delete" = true ]]
+		if [[ "$count" -ne 0 ]]
 		then
-			echo "Of those identical and partial match sequence(s), $keepcount were kept and its $delcount duplicates were removed."
-			if [[ "$inplace" = true ]]
+			if [[ "$delete" = true ]]
 			then
-				echo "Changes made directly to $basefile1."
-			else 
-				echo "Writing modified $basefile1 to $(basename $output1)."
-			 fi
+				echo "Of those identical and partial match sequence(s), $keepcount were kept and its $delcount duplicates were removed."
+				if [[ "$inplace" = true ]]
+				then
+					echo "Changes made directly to $basefile1." >&2
+				else 
+					echo "Writing modified $basefile1 to $(basename $output1)." >&2
+				 fi
+			fi
 		fi
-
 	else
 		echo "There are $count identical sequence(s) within $basefile1."
 	#	echo "Number of identical sequence(s) in $basefile: $count"
-		if [[ "$delete" = true ]]
+		if [[ "$count" -ne 0 ]]
 		then
-			echo "Of those identical sequence(s), $keepcount were kept, and its $delcount duplicates were removed."
-			if [[ "$inplace" = true ]]
+			if [[ "$delete" = true ]]
 			then
-				echo "Changes made directly to $basefile1."
-			else
-				echo "Writing modified $basefile1 to $(basename $output1)."
+				echo "Of those identical sequence(s), $keepcount were kept, and its $delcount duplicates were removed."
+				if [[ "$inplace" = true ]]
+				then
+					echo "Changes made directly to $basefile1." >&2
+				else
+					echo "Writing modified $basefile1 to $(basename $output1)." >&2
+				fi
 			fi
 		fi
 	fi
@@ -527,4 +532,9 @@ then
 		echo "Writing modified $basefile1 to $(basename $output1)." >&2
 		echo "Writing modified $basefile2 to $(basename $output2)." >&2
 	fi
+fi
+
+if [[ "$count" -eq 0 && "$#" -eq 1 && "$delete" = true && -e "$output1" ]]
+then
+	rm $output1
 fi
