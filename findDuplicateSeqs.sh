@@ -77,6 +77,10 @@ then
 	ext1=${basefile1##*.}
 	output1=${dir1}/${filename1}.unique.${ext1}
 	cp $file1 $output1
+	if [ -e "${filename1}.deletions.${ext1}" ]
+	then
+		rm "${filename1}.deletions.${ext1}"
+	fi
 	if [ "$#" -eq 2 ]
 	then
 		dir2=$(dirname $file2)
@@ -142,6 +146,7 @@ do
 		else
 			if [[ "$(grep -wc "$line" $file2)" -gt 1 ]]
 			then
+				# echo "Duplicate: $(grep -wB1 "$line" $output1 | awk '/^>/ {print}' | head -n 1)"
 				if [[ "$verbose" = true ]]
 				then
 					grep -wB1 "$line" $file1 | awk '/^>/ {print}'
@@ -150,12 +155,48 @@ do
 				count=$((count + hits))
 				if [[ "$delete" = true ]]
 				then
-					for sequence in $(grep -wB1 "$line" $file1 | awk '/^>/ {print}' | tail -n +2)
+					removed=false
+					# Put all matches to sequence in deletions, but needs to keep one, so the kept one must be removed from the deletions
+					# the kept one will either be unique if removed=true, or if removed=false, just remove the last two lines of the file
+					grep -wB1 --no-group-separator "$line" $file1 >> ${filename1}.deletions.${ext1}
+					for sequence in $(grep -wB1 "$line" $file1 | awk '/^>/ {print}')
 					do
 						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
+						if [[ "$(grep -cw "$sequence" $file1)" -eq 1 ]]
+						then
+							if [[ "$removed" = false ]]
+							then
+								removed=true
+								kept="$sequence"
+								continue
+							fi
+						fi
 						sed -i "/$sequence/,+1 d" $output1
-						delcount=$((delcount+1))
 					done
+					# Remove the one kept from the deletion file if one was kept
+					if [[ "$removed" = true ]]
+					then
+						sed -i "/$kept/,+1 d" ${filename1}.deletions.${ext1}
+					fi
+					# If at the end of the loop, removed is still false, then no deletion occurred....
+					# Remove all but one-- but sed will replace all -- add last one back (since none of sequence IDs are unique)
+					if [[ "$removed" = false ]]
+					then
+						for sequence in $(grep -wB1 "$line" $file1 | awk '/^>/ {print}')
+						do
+							sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
+							# Remove all matched sequences
+							sed -i "/$sequence/,+1 d" $output1
+
+						done
+						# added back the last two as to keep one of each duplicate
+						grep -wB1 --no-group-separator "$line" $file1 | tail -n 2 >> $output1
+						# all were added to deletion list, but one was added back, need to remove that one from the deletion list, remove last two lines of deletion list
+						head -n -2 ${filename1}.deletions.${ext1} > temp.out
+						mv temp.out ${filename1}.deletions.${ext1}
+					fi
+						
+					delcount=$((delcount+hits-1))
 					keepcount=$((keepcount+1))
 				fi
 				if [[ "$verbose" = true ]]
@@ -218,12 +259,13 @@ do
 				count=$((count + hits))
 				if [[ "$delete" = true ]]
 				then
-					for sequence in $(grep -B1 "$line" $file1 | awk '/^>/ {print}' | tail -n +2)
+					for sequence in $(grep -B1 "$line" $output1 | awk '/^>/ {print}' | tail -n +2)
 					do
 						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
 						sed -i "/$sequence/,+1 d" $output1
-						delcount=$((delcount+1))
+					
 					done
+					delcount=$((delcount+hits-1))
 					keepcount=$((keepcount+1))
 				fi
 				if [[ "$verbose" = true ]]
@@ -306,43 +348,6 @@ then
 		fi
 	done
 fi		
-if [[ "$verbose" = false && "$#" -eq 1 ]]
-then
-	if [[ "$partial" = true ]] 
-	then
-		echo "There are $count sequence(s) that are entirely or partially in $basefile1."
-		#echo "Number of identical and partial match sequence(s) in $basefile1: $count"
-		if [[ "$count" -ne 0 ]]
-		then
-			if [[ "$delete" = true ]]
-			then
-				echo "Of those identical and partial match sequence(s), $keepcount were kept and its $delcount duplicates were removed."
-				if [[ "$inplace" = true ]]
-				then
-					echo "Changes made directly to $basefile1." >&2
-				else 
-					echo "Writing modified $basefile1 to $(basename $output1)." >&2
-				 fi
-			fi
-		fi
-	else
-		echo "There are $count identical sequence(s) within $basefile1."
-	#	echo "Number of identical sequence(s) in $basefile: $count"
-		if [[ "$count" -ne 0 ]]
-		then
-			if [[ "$delete" = true ]]
-			then
-				echo "Of those identical sequence(s), $keepcount were kept, and its $delcount duplicates were removed."
-				if [[ "$inplace" = true ]]
-				then
-					echo "Changes made directly to $basefile1." >&2
-				else
-					echo "Writing modified $basefile1 to $(basename $output1)." >&2
-				fi
-			fi
-		fi
-	fi
-fi
 
 if [[ "$verbose" = true && "$#" -eq 1 && "$count" -eq 0 ]]
 then
@@ -378,6 +383,50 @@ then
 		fi
 	done
 fi
+if [[ "$verbose" = false && "$#" -eq 1 ]]
+then
+	ogcount=$(awk '/^>/ {print}' $file1 | wc -l)
+	if [[ "$partial" = true ]] 
+	then
+		echo "There are $count sequence(s) that are entirely or partially in $basefile1."
+		#echo "Number of identical and partial match sequence(s) in $basefile1: $count"
+		if [[ "$count" -ne 0 ]]
+		then
+			if [[ "$delete" = true ]]
+			then
+				echo "Of those identical and partial match sequence(s), $keepcount were kept and its $delcount duplicates were removed."
+				echo "After removal, there are now $((ogcount-delcount)) unique sequences (originally a total of $ogcount sequences)."
+				if [[ "$inplace" = true ]]
+				then
+					echo "Changes made directly to $basefile1." >&2
+				else 
+					echo "Writing modified $basefile1 to $(basename $output1)." >&2
+				 fi
+			fi
+		fi
+	else
+		echo "There are $count identical sequence(s) within $basefile1."
+	#	echo "Number of identical sequence(s) in $basefile: $count"
+		if [[ "$count" -ne 0 ]]
+		then
+			if [[ "$delete" = true ]]
+			then
+				echo "Of those identical sequence(s), $keepcount were kept, and its $delcount duplicates were removed."
+				echo "After removal, there are now $((ogcount-delcount)) unique sequences (originally a total of $ogcount sequences)."
+				if [[ "$inplace" = true ]]
+				then
+					echo "Changes made directly to $basefile1." >&2
+				else
+					echo "Writing modified $basefile1 to $(basename $output1)." >&2
+				fi
+			fi
+		fi
+	fi
+fi
+
+
+
+
 
 # Check for duplicate sequences in file 2 and remove them
 # changed output2 to file2 except for in sed
