@@ -75,11 +75,20 @@ if [[ "$delete" = true ]]
 then
 	filename1=${basefile1%.*}
 	ext1=${basefile1##*.}
-	output1=${dir1}/${filename1}.unique.${ext1}
-	cp $file1 $output1
-	if [ -e "${filename1}.deletions.${ext1}" ]
+	if [[ "$partial" = true ]]
 	then
-		rm "${filename1}.deletions.${ext1}"
+		output=${dir1}/${filename1}.partial.unique.${ext1}
+	else
+		output1=${dir1}/${filename1}.unique.${ext1}
+	fi
+	cp $file1 $output1
+	if [[ "$partial" = false && -e "${dir1}/${filename1}.deletions.${ext1}" ]]
+	then
+		rm "${dir1}/${filename1}.deletions.${ext1}"
+	fi
+	if [[ "$partial" = true && -e "${dir1}/${filename1}.partial.deletions.${ext1}" ]]
+	then
+		rm "${dir1}/${filename1}.partial.deletions.${ext1}"
 	fi
 	if [ "$#" -eq 2 ]
 	then
@@ -87,7 +96,12 @@ then
 		basefile2=$(basename $file2)
 		filename2=${basefile2%.*}
 		ext2=${basefile2##*.}
-		output2=${dir2}/${filename2}.unique.${ext2}
+		if [[ "$partial" = true ]]
+		then
+			output2=${dir2}/${filename2}.partial.unique.${ext2}
+		else
+			output2=${dir2}/${filename2}.unique.${ext2}
+		fi
 		cp $file2 $output2
 	fi
 fi
@@ -146,7 +160,6 @@ do
 		else
 			if [[ "$(grep -wc "$line" $file2)" -gt 1 ]]
 			then
-				# echo "Duplicate: $(grep -wB1 "$line" $output1 | awk '/^>/ {print}' | head -n 1)"
 				if [[ "$verbose" = true ]]
 				then
 					grep -wB1 "$line" $file1 | awk '/^>/ {print}'
@@ -158,7 +171,7 @@ do
 					removed=false
 					# Put all matches to sequence in deletions, but needs to keep one, so the kept one must be removed from the deletions
 					# the kept one will either be unique if removed=true, or if removed=false, just remove the last two lines of the file
-					grep -wB1 --no-group-separator "$line" $file1 >> ${filename1}.deletions.${ext1}
+					grep -wB1 --no-group-separator "$line" $file1 >> ${dir1}/${filename1}.deletions.${ext1}
 					for sequence in $(grep -wB1 "$line" $file1 | awk '/^>/ {print}')
 					do
 						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
@@ -176,7 +189,7 @@ do
 					# Remove the one kept from the deletion file if one was kept
 					if [[ "$removed" = true ]]
 					then
-						sed -i "/$kept/,+1 d" ${filename1}.deletions.${ext1}
+						sed -i "/$kept/,+1 d" ${dir1}/${filename1}.deletions.${ext1}
 					fi
 					# If at the end of the loop, removed is still false, then no deletion occurred....
 					# Remove all but one-- but sed will replace all -- add last one back (since none of sequence IDs are unique)
@@ -192,8 +205,8 @@ do
 						# added back the last two as to keep one of each duplicate
 						grep -wB1 --no-group-separator "$line" $file1 | tail -n 2 >> $output1
 						# all were added to deletion list, but one was added back, need to remove that one from the deletion list, remove last two lines of deletion list
-						head -n -2 ${filename1}.deletions.${ext1} > temp.out
-						mv temp.out ${filename1}.deletions.${ext1}
+						head -n -2 ${dir1}/${filename1}.deletions.${ext1} > temp.out
+						mv temp.out ${dir1}/${filename1}.deletions.${ext1}
 					fi
 						
 					delcount=$((delcount+hits-1))
@@ -259,12 +272,38 @@ do
 				count=$((count + hits))
 				if [[ "$delete" = true ]]
 				then
+					removed=false
+					grep -B1 --no-group-separator "$line" $file1 >> ${dir1}/${filename1}.deletions.${ext1}
 					for sequence in $(grep -B1 "$line" $output1 | awk '/^>/ {print}' | tail -n +2)
 					do
 						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
+						if [[ "$(grep -c "$sequence" $file1)" -eq 1 ]]
+						then
+							if [[ "$removed" = false ]]
+							then
+								removed=true
+								kept="$sequence"
+								continue
+							fi
+						fi
 						sed -i "/$sequence/,+1 d" $output1
 					
 					done
+					if [[ "$removed" = true ]]
+					then
+						sed -i "/$kept/,+1 d" ${dir1}/${filename1}.deletions.${ext1}
+					fi
+					if [[ "$removed" = false ]]
+					then
+						for sequence in $(grep -B1 "$line" $file1 | awk '/^>/ {print}')
+						do
+							sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
+							sed -i "/$sequence/,+1 d" $output1
+						done
+						grep -B1 --no-group-separator "$line" $file1 | tail -n 2 >> $output1
+						head -n -2 ${dir1}/${filename1}.deletions.${ext1} > temp.out
+						mv temp.out ${dir1}/${filename1}.deletions.${ext1}
+					fi
 					delcount=$((delcount+hits-1))
 					keepcount=$((keepcount+1))
 				fi
@@ -278,9 +317,6 @@ do
 done
 
 # If Partial is true, then sequences from file2 must be checked against sequences in file1
-# changed output1/output2 to file1/file2 except in sed for loop
-# did this since outputs are unbound if delete != true
-# However, this causes repeats 
 revcount=0
 if [[ "$partial" = true && "$#" -eq 2 ]]
 then
@@ -292,7 +328,6 @@ then
 		then
 			if [[ "$verbose" = true ]]
 			then
-				#i=0
 				for item in $(grep "$line" $file2)
 				do
 					if [[ "$(grep -wc "$line" $file1)" -gt 0 ]]
@@ -363,22 +398,89 @@ then
 		then
 			if [[ "$(grep -c "$line" $output1)" -gt 1 ]]
 			then
-				for sequence in $(grep -B1 "$line" $output1 | awk '/^>/ {print}' | tail -n +2)
+				removed=false
+				if [[ "$#" -eq 1 ]]
+				then
+					grep -B1 --no-group-separator "$line" $file1 >> ${dir1}/${filename1}.deletions.${ext1}
+				fi
+				for sequence in $(grep -B1 "$line" $output1 | awk '/^>/ {print}')
 				do
 					sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g') 
+					if [[ "$(grep -c "$sequence" $file1)" -eq 1 ]]
+					then
+						if [[ "$removed" = false ]]
+						then
+							removed=true
+							kept="$sequence"
+							continue
+						fi
+					fi
 					sed -i "/$sequence/,+1 d" $output1
 					delcount=$((delcount+1))
 				done
+				if [[ "$removed" = true && "$#" -eq 1 ]]
+				then
+					sed -i "/$kept/,+1 d" ${dir1}/${filename1}.deletions.${ext1}
+				fi
+				if [[ "$removed" = false ]]
+				then
+					for sequence in $(grep -B1 "$line" $file1 | awk '/^>/ {print}')
+					do
+						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
+						sed -i "/$sequence/,+1 d" $output1
+					done
+					grep -B1 --no-group-separator "$line" $file1 | tail -n 2 >> $output1
+					if [[ "$#" -eq 1 ]]
+					then
+						head -n -2 ${dir1}/${filename1}.deletions.${ext1} > temp.out
+						mv temp.out ${dir1}/${filename1}.deletions.${ext1}
+					fi
+				fi
+				keepcount=$((keepcount+1))
 			fi
 		else
 			if [[ "$(grep -wc "$line" $output1)" -gt 1 ]]
 			then
+				removed=false
+				if [[ "$#" -eq 1 ]]
+				then
+					grep -wB1 --no-group-separator "$line" $file1 >> ${dir1}/${filename1}.deletions.${ext1}
+				fi
 				for sequence in $(grep -wB1 "$line" $output1 | awk '/^>/ {print}' | tail -n +2)
 				do
+
 					sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
+					if [[ "$(grep -cw "$sequence" $file1)" -eq 1 ]]
+					then
+						if [[ "$removed" = false ]]
+						then
+							removed=true
+							kept="$sequence"
+							continue
+						fi
+					fi
 					sed -i "/$sequence/,+1 d" $output1
 					delcount=$((delcount+1))
 				done
+				if [[ "$removed" = true && "$#" -eq 1 ]]
+				then
+					sed -i "/$kept/,+1 d" ${dir1}/${filename1}.deletions.${ext1}
+				fi
+				if [[ "$removed" = false ]]
+				then
+					for sequence in $(grep -wB1 "$line" $file1 | awk '/^>/ {print}')
+					do
+						sequence=$(echo $sequence |sed 's~\\~\\\\\\~g' | sed 's~\/~\\/~g' | sed 's~\[~\\[~g' | sed 's~\]~\\]~g')
+						sed -i "/$sequence/,+1 d" $output1
+					done
+					grep -wB1 --no-group-separator "$line" $file1 | tail -n 2 >> $output1
+					if [[ "$#" -eq 1 ]]
+					then
+						head -n -2 ${dir1}/${filename1}.deletions.${ext1} > temp.out
+						mv temp.out ${dir1}/${filename1}.deletions.${ext1}
+					fi
+				fi
+
 			fi
 		fi
 	done
@@ -399,8 +501,16 @@ then
 				if [[ "$inplace" = true ]]
 				then
 					echo "Changes made directly to $basefile1." >&2
+					if [[ -e "${dir1}/${filename1}.partial.deletions.${ext1}" ]]
+					then
+						echo "Deleted sequences saved in ${filename1}.partial.deletions.${ext1}" >&2
+					fi
 				else 
 					echo "Writing modified $basefile1 to $(basename $output1)." >&2
+					if [[ -e "${dir1}/${filename1}.partial.deletions.${ext1}" ]]
+					then
+						echo "Deleted sequences saved in ${filename1}.partial.deletions.${ext1}" >&2
+					fi
 				 fi
 			fi
 		fi
@@ -416,8 +526,16 @@ then
 				if [[ "$inplace" = true ]]
 				then
 					echo "Changes made directly to $basefile1." >&2
+					if [[ -e "${dir1}/${filename1}.deletions.${ext1}" ]]
+					then
+						echo "Deleted sequences saved in ${filename1}.deletions.${ext1}" >&2
+					fi	
 				else
 					echo "Writing modified $basefile1 to $(basename $output1)." >&2
+					if [[ -e "${dir1}/${filename1}.deletions.${ext1}" ]]
+					then
+						echo "Deleted sequences saved in ${filename1}.deletions.${ext1}" >&2
+					fi	
 				fi
 			fi
 		fi
@@ -464,9 +582,7 @@ if [[ "$partial" = true ]]
 then
 	for line in $(awk '!/^>/ {print}' $file1 | sort -u)
 	do
-		#echo $line
 		hits=$(grep -c $line $file1)
-		#echo $hits
 		if [[ "$hits" -gt 1 ]]
 		then
 			dupcount1=$((dupcount1+hits))
@@ -562,13 +678,25 @@ then
 	if [[ "$inplace" = true ]] 
 	then
 		echo "Changes made directly to $basefile1 and $basefile2." >&2
-		cat $file1 $file2 > ${dir1}/${filename1}.${filename2}.merged.${ext1}
-		echo "Merged $basefile1 and $basefile2 into ${filename1}.${filename2}.merged.${ext1}." >&2
+		if [[ "$partial" = true ]]
+		then
+			cat $file1 $file2 > ${dir1}/${filename1}.${filename2}.partial.merged.${ext1}
+			echo "Merged $basefile1 and $basefile2 into ${filename1}.${filename2}.partial.merged.${ext1}." >&2
+		else
+			cat $file1 $file2 > ${dir1}/${filename1}.${filename2}.merged.${ext1}
+			echo "Merged $basefile1 and $basefile2 into ${filename1}.${filename2}.merged.${ext1}." >&2
+		fi	
 	else
 		echo "Writing modified $basefile1 to $(basename $output1)." >&2
 		echo "Writing modified $basefile2 to $(basename $output2)." >&2
-		cat $output1 $output2 > ${dir1}/${filename1}.${filename2}.merged.${ext1}
-		echo "Merged $(basename $output1) and $(basename $output2) into ${filename1}.${filename2}.merged.${ext1}." >&2
+		if [[ "$partial" = true ]]
+		then
+			cat $output1 $output2 > ${dir1}/${filename1}.${filename2}.partial.merged.${ext1}
+			echo "Merged $(basename $output1) and $(basename $output2) into ${filename1}.${filename2}.partial.merged.${ext1}." >&2
+		else
+			cat $output1 $output2 > ${dir1}/${filename1}.${filename2}.merged.${ext1}
+			echo "Merged $(basename $output1) and $(basename $output2) into ${filename1}.${filename2}.merged.${ext1}." >&2
+		fi
 	fi
 fi
 
