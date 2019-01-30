@@ -11,6 +11,6 @@ fastq=$1
 filename=$(basename $fastq ".fq.gz")
 set -eu -o pipefail
 
-seqtk seq -1 $fastq | pigz -p 64 > ${filename}.R1.fq.gz
-seqtk seq -2 $fastq | pigz -p 64 > ${filename}.R2.fq.gz
+seqtk seq -1 $fastq | sed '/^@/ s/$/\/1/' |pigz -p 64 > ${filename}.R1.fq.gz
+seqtk seq -2 $fastq | sed '/^@/ s/$/\/2/' |pigz -p 64 > ${filename}.R2.fq.gz
 
