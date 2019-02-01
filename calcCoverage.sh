@@ -16,15 +16,14 @@ if [[ "$#" -eq 1 && "$alignment" == *sorted*.bam ]]
 then
 	result=$(median.R <(awk '{print $3}' <(samtools depth -a $alignment)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}')
-	echo "Coverage: ${median}x"
+	echo -e "Assembly: ${filename}\tCoverage: ${median}x"
 # If the BAM file is unsorted, sort it first
 elif [[ "$#" -eq 1 && "$alignment" == *.bam ]]
 then
-	samtools sort $alignment > ${filename}.sorted.bam
-	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.sorted.reads.bam)) 2> /dev/null)
+	samtools sort $alignment > ${filename}.reads.sorted.bam
+	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}')
-	echo "Coverage: ${median}x"
-	rm ${filename}.sorted.bam
+	echo -e "Assembly: ${filename}\tCoverage: ${median}x"
 
 # If there are three arguments, assume they are assembly and reads
 elif [ "$#" -eq 3 ]
@@ -48,19 +47,14 @@ then
 		echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>" 1>&2
 		exit 1
 	fi
-	bwa index $assembly
-	bwa mem -t 16 $assembly $readsf $readsb | samtools view -F 4 -b -o ${filename}.reads.bam
-	samtools sort ${filename}.reads.bam > ${filename}.reads.sorted.bam
+	if [[ ! -e "${assembly}.sa" ]]
+	then
+		bwa index $assembly 2> /dev/null
+	fi
+	bwa mem -t 48 $assembly $readsf $readsb 2> /dev/null | samtools view -F 4 -b | samtools sort > ${filename}.reads.sorted.bam
 	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}')
-	echo "Coverage: ${median}x"
-	rm ${filename}.reads.bam
-	rm ${filename}.reads.sorted.bam
-	rm ${assembly}.sa
-	rm ${assembly}.amb
-	rm ${assembly}.ann
-	rm ${assembly}.bwt
-	rm ${assembly}.pac
+	echo -e "Assembly: ${filename}\tCoverage: ${median}x"
 
 # If two, assume first is assembly second is interleaved reads.
 elif [ "$#" -eq 2 ]
@@ -81,19 +75,14 @@ then
 		echo "USAGE: $(basename $0) <FASTA file> <inter-leaved reads>" 1>&2
 		exit 1
 	fi
-	bwa index $assembly
-	bwa mem -t 48 $assembly $reads | samtools view -F 4 -b -o ${filename}.reads.bam
-	samtools sort ${filename}.reads.bam > ${filename}.reads.sorted.bam
+	if [[ ! -e "${assembly}.sa" ]]
+	then
+		bwa index $assembly 2> /dev/null
+	fi
+	bwa mem -t 48 $assembly $reads 2> /dev/null | samtools view -F 4 -b | samtools sort > ${filename}.reads.sorted.bam
 	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}')
-	echo "Coverage: ${median}x"
-	rm ${filename}.reads.bam
-	rm ${filename}.reads.sorted.bam
-	rm ${assembly}.sa
-	rm ${assembly}.amb
-	rm ${assembly}.ann
-	rm ${assembly}.bwt
-	rm ${assembly}.pac
+	echo -e "Assembly: ${filename}\tCoverage: ${median}x"
 
 # Or the arguments are invalid
 else
