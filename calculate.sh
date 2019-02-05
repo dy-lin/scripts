@@ -4,26 +4,35 @@ PROGRAM=$(basename $0)
 average=false
 median=false
 mode=false
-
-while getopts :amo opt
+gethelp=false
+while getopts :amoh opt
 do
 	case $opt in
 		a) average=true;;
+		h) gethelp=true;;
 		m) median=true;;
 		o) mode=true;;
 		\?) echo "$PROGRAM: invalid option: $opt" >&2; exit 1;;
 	esac
 done
 shift $((OPTIND-1))
+if [[ "$gethelp" = true ]]
+then
+	echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
+	echo "DESCRIPTION: Takes a file with numbers, and prints the desired calculation result to STDOUT." 1>&2
+	echo -e "OPTIONS: At least ONE of -a, -m or -o must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-h\tShow help menu" 1>&2 
+	exit 1
+fi
+
 pipe=false
 if [ -p /dev/stdin ]
 then
 	pipe=true
 	if [[ "$#" -ne 0 ]]
 	then
-		echo "USAGE: $PROGRAM <FILE>" 1>&2
+		echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
 		echo "DESCRIPTION: Takes a file with numbers, and prints the desired calculation result to STDOUT." 1>&2
-		echo -e "OPTIONS: At least ONE option must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode"
+		echo -e "OPTIONS: At least ONE of -a, -m, or -o must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-h\tShow help menu" 1>&2
 		exit 1
 	fi
 	cat > temp.out
@@ -31,9 +40,9 @@ then
 else
 	if [[ "$#" -ne 1 ]]
 	then
-		echo "USAGE: $PROGRAM <FILE>" 1>&2
+		echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
 		echo "DESCRIPTION: Takes a file with numbers, and prints the desired calculation result to STDOUT." 1>&2
-		echo -e "OPTIONS: At least ONE option must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode"
+		echo -e "OPTIONS: At least ONE of -a, -m, or -o must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-h\tShow help menu" 1>&2
 		exit 1
 	fi
 	if [[ "$1" == "/dev/fd/63" ]]
@@ -54,9 +63,9 @@ else
 	else
 		echo "ERROR: STDIN is empty." 1>&2
 	fi
-		echo "USAGE: $PROGRAM <FILE>" 1>&2
+		echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
 		echo "DESCRIPTION: Takes a file with numbers, and prints the desired calculation result to STDOUT." 1>&2
-		echo -e "OPTIONS: At least ONE option must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode"
+		echo -e "OPTIONS: At least ONE of -a, -m, or -o must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-h\tShow help menu" 1>&2
 		if [[ -e "temp.out" ]]
 		then
 			rm temp.out
@@ -83,9 +92,9 @@ then
 			echo "ERROR: STDIN is empty." 1>&2
 		fi
 	fi
-	echo "USAGE: $PROGRAM <FILE>" 1>&2
+	echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
 	echo "DESCRIPTION: Takes a file with numbers, and prints the desired calculation result to STDOUT." 1>&2		
-	echo -e "OPTIONS: At least ONE option must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode"
+	echo -e "OPTIONS: At least ONE of -a, -m or -o must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-h\tShow help menu" 1>&2
 	if [[ -e "temp.out" ]]
 	then
 		rm temp.out
@@ -96,9 +105,10 @@ fi
 
 if [[ "$average" = false && "$median" = false && "$mode" = false ]]
 then
-	echo "USAGE: $PROGRAM <FILE>" 1>&2
+	echo "ERROR: At least one calculation has to be selected." 1>&2
+	echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
 	echo "DESCRIPTION: Takes a file with numbers, and prints the mean/median/mode (depending on flags) to STDOUT." 1>&2
-	echo -e "OPTIONS: At least ONE option must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode"
+	echo -e "OPTIONS: At least ONE of -a, -m or -o must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-h\tShow help menu" 1>&2
 	if [[ -e "temp.out" ]]
 	then
 		rm temp.out
@@ -120,9 +130,9 @@ done
 if [[ "$number" = false ]]
 then
 	echo "ERROR: Input must contain numbers only." 1>&2
-	echo "USAGE: $PROGRAM <FILE>" 1>&2
+	echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
 	echo "DESCRIPTION: Takes a file with numbers, and prints the mean/median/mode (depending on flags) to STDOUT." 1>&2
-	echo -e "OPTIONS: At least ONE option must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode"
+	echo -e "OPTIONS: At least ONE of -a, -m or -o must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-h\tShow help menu" 1>&2 
 	if [[ -e "temp.out" ]]
 	then
 		rm temp.out
