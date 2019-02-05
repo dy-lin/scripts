@@ -44,6 +44,10 @@ then
 			if [[ ! -z "$file" ]]
 			then
 				dsrc c -t48 $file ${file}.dsrc
+				if [[ "$delete" = true ]]
+				then
+					rm $file
+				fi
 			else
 				break
 			fi
@@ -54,6 +58,11 @@ then
 			if [[ ! -z "$file" ]]
 			then
 				dsrc c -t48 $file ${file}.dsrc
+				if [[ "$delete" = true ]]
+				then
+					rm $file
+				fi
+
 			else
 				break
 			fi
@@ -64,6 +73,11 @@ then
 			if [[ ! -z "$file" ]]
 			then
 				zcat $file | dsrc c -t48 -s ${file}.dsrc
+				if [[ "$delete" = true ]]
+				then
+					rm $file
+				fi
+
 			else
 				break
 			fi
@@ -74,6 +88,11 @@ then
 			if [[ ! -z "$file" ]]
 			then
 				zcat $file | dsrc c -t48 -s ${file}.dsrc
+				if [[ "$delete" = true ]]
+				then
+					rm $file
+				fi
+
 			else
 				break
 			fi
@@ -113,6 +132,11 @@ else
 			if [[ ! -z "$file" ]]
 			then
 				dsrc c -t48 $file ${file}.dsrc
+				if [[ "$delete" = true ]]
+				then
+					rm $file
+				fi
+
 			else
 				break
 			fi
@@ -123,6 +147,11 @@ else
 			if [[ ! -z "$file" ]]
 			then
 				dsrc c -t48 $file ${file}.dsrc
+				if [[ "$delete" = true ]]
+				then
+					rm $file
+				fi
+
 			else
 				break
 			fi
@@ -133,6 +162,11 @@ else
 			if [[ ! -z "$file" ]]
 			then
 				zcat $file | dsrc c -t48 -s ${file}.dsrc
+				if [[ "$delete" = true ]]
+				then
+					rm $file
+				fi
+
 			else
 				break
 			fi
@@ -143,6 +177,11 @@ else
 			if [[ ! -z "$file" ]]
 			then
 				zcat $file | dsrc c -t48 -s ${file}.dsrc
+				if [[ "$delete" = true ]]
+				then
+					rm $file
+				fi
+
 			else
 				break
 			fi
