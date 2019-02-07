@@ -12,7 +12,7 @@ fi
 if [ "$#" -eq 1 ]
 then
 	echo "One argument detected. Using today's date by default." 1>&2
-	date=$(date | awk '{print $3 $2 $6}')
+	date=$(date | awk '{if($3<10) {print "0" $3 $2 $6} else { print $3 $2 $6}}')
 # If two arguments are detected, using the provided date instead
 else
 	date=$1

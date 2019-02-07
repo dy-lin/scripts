@@ -1,20 +1,24 @@
 #!/bin/bash
-set -eu -o pipefail
+# set -eu -o pipefail
 PROGRAM=$(basename $0)
-organism="honeybee"
+organism=honeybee
 gethelp=false
 while getopts :hO: opt
 do
 	case $opt in
 		h) gethelp=true;;
-		o) organism="$OPTARG";;
+		O) organism=$OPTARG;;
 		\?) echo "$PROGRAM: invalid option: $OPTARG" >&2; exit 1;;
 	esac
 done
-shift $((OPTIND-1))
+shift "$((OPTIND-1))"
 if [[ "$#" -ne 9 || "$gethelp" = true ]]
 then
-	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end> <scaffolds> <transcripts> <GFF> <species>" 1>&2
+	if [[ "$#" -ne 9 && "$#" -gt 0 ]]
+	then
+		echo "ERROR: Incorrect number of arguments!" 1>&2
+	fi
+	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end> <scaffolds> <transcripts> <GFF>" 1>&2
 	echo -e "\tTo run jackhmmer without a sweep, set: <sweep start> = <sweep end>" 1>&2
 	echo "DESCRIPTION: Runs jackhmmer of literature AMPs against a protein database in order to find a specific class of AMP using homology-based search. Sweep is run as to find the best threshold to run jackhmmer." 1>&2
 	echo -e "OPTIONS:\n\t-h\t\tShow help menu\n\t-O <organism>\tCurrently supports 'spruce' or 'honeybee'" 1>&2
@@ -250,7 +254,7 @@ then
 		grep $i $gff >> gffs/${scaffold}.gff
 	done
 
-	date=$(date | awk '{print $3 $2 $6}')
+	date=$(date | awk '{if($3<10) {print "0" $3 $2 $6} else {print $3 $2 $6}}')
 	cd scaffolds
 	cat *.scaffold.fa > ../all.scaffolds.${date}.fa
 	cd ../transcripts
