@@ -1,11 +1,21 @@
 #!/bin/bash
-set -eu -o pipefail
+set -e -o pipefail
 PROGRAM=$(basename $0)
 # Compress BAM files and FASTQ files as needed.
 bam=false
 fq=false
 gethelp=false
 delete=false
+if [[ "$#" -lt 1 ]]
+then
+	echo "USAGE: $PROGRAM [OPTIONS] <DIRECTORY>" 1>&2
+	echo "DESCRIPTION: Takes a directory, finds all specified files and compresses them." 1>&2
+	echo -e "OPTIONS: At least ONE of -b or -f  has to be selected.\n\t-b\tCompresses BAM files\n\t-d\tDeletes original file\n\t-f\tCompresses FASTQ files\n\t-h\tShow help menu" 1>&2
+
+	exit 1
+fi
+
+
 while getopts :bfh opt
 do
 	case $opt in
@@ -18,7 +28,7 @@ do
 done
 shift $((OPTIND-1))
 
-if [[ "$#" -lt 1 || "$gethelp" = true ]]
+if [[ "$gethelp" = true ]]
 then
 	echo "USAGE: $PROGRAM [OPTIONS] <DIRECTORY>" 1>&2
 	echo "DESCRIPTION: Takes a directory, finds all specified files and compresses them." 1>&2
@@ -111,7 +121,7 @@ then
 				do
 					echo "Reference FASTA file not found." 1>&2
 					echo "FASTA files in the current directory:" 1>&2
-					ls ${dirname}/*.fa 1>&2
+					cat <(ls ${dirname}/*.fa 2> /dev/null) <(ls ${dirname}/*.fasta 2> /dev/null) <(ls ${dirname}/*.fna 2> /dev/null) 1>&2
 					echo "Please enter the full absolute path of your reference FASTA file:" 1>&2
 					read fasta
 				done
@@ -200,6 +210,8 @@ else
 				while [ ! -e "$fasta" ]
 				do
 					echo "Reference FASTA file not found." 1>&2
+					echo "FASTA files in the current directory:" 1>&2
+					cat <(ls ${dirname}/*.fa 2> /dev/null) <(ls ${dirname}/*.fasta 2> /dev/null) <(ls ${dirname}/*.fna 2> /dev/null) 1>&2
 					echo "Please enter the full absolute path of your reference FASTA file:" 1>&2
 					read fasta
 				done
