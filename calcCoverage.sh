@@ -22,7 +22,7 @@ then
 	echo "Logfile for $(readlink -f $alignment)" >> log${i}.log
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a $alignment 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
-	echo "$(readlink -f $alignment)"
+	echo "File: $(readlink -f $alignment)"
 	echo -e "Coverage: ${median}x\n"
 # If the BAM file is unsorted, sort it first
 	i=$((i+1))
@@ -38,7 +38,7 @@ then
 	echo "Calculating coverage..." 1>&2
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
-	echo "$(readlink -f $alignment)"
+	echo "File: $(readlink -f $alignment)"
 	echo -e "Coverage: ${median}x\n"
 	i=$((i+1))
 # If there are three arguments, assume they are assembly and reads
@@ -78,7 +78,7 @@ then
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 #	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
-	echo "$(readlink -f $assembly)"
+	echo "File: $(readlink -f $assembly)"
 	echo -e "Coverage: ${median}x\n"
 	i=$((i+1))
 # If two, assume first is assembly second is interleaved reads.
@@ -114,7 +114,7 @@ then
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 #	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
-	echo "$(readlink -f $assembly)"
+	echo "File: $(readlink -f $assembly)"
 	echo -e "Coverage: ${median}x\n"
 	i=$((i+1))
 # Or the arguments are invalid
