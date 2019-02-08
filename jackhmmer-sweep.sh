@@ -7,6 +7,7 @@ N=$4
 begin=$5
 end=$6
 step=$7
+
 for i in `seq $begin $step $end`
 do	
 	outfile="jackhmmer_bs${i}_N${N}.out"
@@ -61,6 +62,6 @@ do
 			fi
 		fi
 	done
-	echo "Bit score threshold ${threshold} contains all guide proteins..."	
+	echo "Bit score threshold ${threshold} contains all guide proteins..."
 done
-exit 0
+exit 3

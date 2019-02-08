@@ -156,8 +156,14 @@ then
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
+			# If sweep = 3, then the whole sweep finished with no problems -- need to lower the whole interval
+			elif [[ "$sweep" -eq 3 ]]
+			then
+				begin=$end
+				end=$((begin + step))
 			# If sweep > 2 (aka a threshold), then reduce the interval and find the threshold
-			elif [ "$sweep" -gt 2 ]
+
+			elif [ "$sweep" -gt 3 ]
 			then
 				end=$sweep
 				begin=$((end-step))
@@ -173,7 +179,7 @@ then
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $((begin+step)) $((end-step)) $step
 				sweep=$?
-			fi		
+			fi
 		done
 		threshold=$((sweep-1))
 		echo -e "\nBit score threshold $threshold is the optimal threshold to use when running jackhmmer!\n"
