@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e -o pipefail
 PROGRAM=$(basename $0)
-# Compress BAM files and FASTQ files as needed.
+# Experimental -- only FASTQ function tested.
 bam=false
 fq=false
 gethelp=false

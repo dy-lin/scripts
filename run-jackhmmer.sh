@@ -1,4 +1,5 @@
 #!/bin/bash
+# Using a non-zero exit status as a 'return value', so commenting out pipefail
 # set -eu -o pipefail
 PROGRAM=$(basename $0)
 organism=honeybee

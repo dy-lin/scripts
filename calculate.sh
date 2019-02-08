@@ -158,11 +158,19 @@ then
 	if [[ "$linecount" -eq 1 ]]
 	then
 		echo "Array detected! Calculating mean..." 1>&2
-		cat $file | awk '{print}' | tr ' ' '\n' | awk '{sum+=$1} END{ if (NR !=0 ) {print "Mean: " sum/NR} else { print "There are no numbers given!"}}'
+		cat $file | awk '{print}' | tr ' ' '\n' | awk '{sum+=$1} END{ if (NR !=0 ) {print "Mean: " sum/NR} else { print "There are no numbers given!"; exit 1}}'
 	else
 		echo "Calculating mean..." 1>&2
-		awk '{sum+=$1} END{ if (NR != 0) {print "Mean: " sum/NR} else { print "There are no numbers given!"}}' $file
+		awk '{sum+=$1} END{ if (NR != 0) {print "Mean: " sum/NR} else { print "There are no numbers given!"; exit 1}}' $file
 	fi
+		if [[ "$?" -eq 1 ]]
+		then
+			if [[ -e "temp.out" ]]
+			then
+				rm temp.out
+			fi
+			exit 1
+		fi
 fi
 
 if [[ "$mode" = true ]]
@@ -173,8 +181,17 @@ then
 		cat $file | tr ' ' '\n' | awk '{a[$1]++} END{ for ( i in a ) { if (a[i] > freq ) {most=i; freq=a[i]} } for (i in a) {for (j in a) { if (a[i] != a[j]) {same=1}}} if(same == 1) {print "Mode:", most} else {print "All values occur at the same frequency."}}'
 	else
 		echo "Calculating mode..." 1>&2
-		awk '{a[$1]++} END{ for ( i in a ) { if (a[i] > freq ) {most=i; freq=a[i]} } for (i in a) {for (j in a) { if (a[i] != a[j]) {same=1}}} if(same == 1) {print "Mode:", most} else {print "All values occur at the same frequency."}}' $file
+		awk '{a[$1]++} END{ for ( i in a ) { if (a[i] > freq ) {most=i; freq=a[i]} } for (i in a) {for (j in a) { if (a[i] != a[j]) {same=1}}} if(same == 1) {print "Mode:", most} else {print "All values occur at the same frequency."; exit 1}}' $file
 	fi
+		if [[ "$?" -eq 1 ]]
+		then
+			if [[ -e "temp.out" ]]
+			then
+				rm temp.out
+			fi
+			exit 1
+		fi
+	
 fi
 
 if [[ -e "temp.out" ]]
