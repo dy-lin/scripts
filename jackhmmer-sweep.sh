@@ -56,7 +56,7 @@ do
 			#	echo "...${guide} is not present when the threshold is ${threshold}." 
 				if [ "$step" -ne 1 ]
 				then
-					echo "Therefore, the ideal threshold will be bewteen $((threshold-step)) and $threshold!"
+					echo "Therefore, the ideal threshold will be between $((threshold-step)) and $threshold!"
 				fi
 				exit $threshold
 			fi
