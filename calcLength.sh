@@ -5,53 +5,93 @@ PROGRAM=$(basename $0)
 # Prints results to screen, use bash redirection to save file to a tsv
 intron=false
 gethelp=false
-while getopts :hi opt
+table=false
+suppress=false
+while getopts :hist opt
 do
 	case $opt in
 		h) gethelp=true;;
 		i) intron=true;;
+		s) suppress=true;;
+		t) table=true;;
 		\?)	echo "$PROGRAM: Invalid option $opt" 1>&2; exit 1;;
 	esac
 done
 
 shift $((OPTIND-1))
-if [[ "$#" -ne 1 || "$gethelp" = true ]]
+if [[ "$#" -lt 1 || "$gethelp" = true ]]
 then
 	echo "USAGE: $(basenmae $0) <GFF file>" 1>&2
 	echo "DESCRIPTION: Takes a GFF file, extracts feature length." 1>&2
-	echo -e "OPTIONS:\n\t-h\tShow help menu\n\t-i\tGet intron length" 1>&2
+	echo -e "OPTIONS:\n\t-h\tShow help menu\n\t-i\tGet intron lengths\n\t-s\tSuppress default output of transcript lengths\n\t-t\tPrint as table" 1>&2
 	exit 1
-fi
-gff=$1
-
-if [[ "$intron" = true && "$(grep -c '	intron	' $gff)" -eq 0 ]]
-then
-	echo "There are no intron annotations in this GFF."
 fi
 
 IFS=$'\n'
-for line in $(cat $gff)
+for gff in "$@"
 do
-	feature=$(echo $line | awk -F "\t" '{print $3}')
-	if [ "$feature" == "mRNA" ]
+
+	if [ -e temp.tsv ]
 	then
-		name=$(echo $line | awk -F "\t" '{print $9}' | awk -F ";" '{print $1}' | sed 's/ID=//')
-		begin=$(echo $line | awk -F "\t" '{print $4}')
-		end=$(echo $line | awk -F "\t" '{print $5}')
-		length=$((end-begin+1))
-		echo -e "$name\t$length"
+		rm temp.tsv
 	fi
-	if [ "$feature" == "intron" ]
+	echo "$(basename $gff):" >> temp.tsv
+	if [[ "$intron" = true && "$(grep -c '	intron	' $gff)" -eq 0 ]]
 	then
-		begin=$(echo $line | awk -F "\t" '{print $4}')
-		end=$(echo $line | awk -F "\t" '{print $5}')
-		length=$((end-begin+1))
-		if [[ "$intron" = true ]]
+		if [[ "$suppress" = true ]]
 		then
-			echo -e "$name:intron\t$length"
+			echo "Default output of transcript lengths has been suppressed." >> temp.tsv
+		fi
+		echo "There are no intron annotations in this GFF." >> temp.tsv
+		intron=false
+		if [[ "$suppress" = true ]]
+		then
+			if [[ "$#" -ne 1 ]]
+			then
+				head -n1 $gff
+				cat <(tail -n +2 $gff)
+				continue
+			fi
 		fi
 	fi
+	for line in $(cat $gff)
+	do
+		feature=$(echo $line | awk -F "\t" '{print $3}')
+		if [[ "$feature" == "mRNA" ]]
+		then
+			name=$(echo $line | awk -F "\t" '{print $9}' | awk -F ";" '{print $1}' | sed 's/ID=//')
+			if [[ "$suppress" = false ]]
+			then
+				begin=$(echo $line | awk -F "\t" '{print $4}')
+				end=$(echo $line | awk -F "\t" '{print $5}')
+				length=$((end-begin+1))
+				echo -e "$name\t$length" >> temp.tsv
+			fi
+		fi
+		if [[ "$intron" = true && "$feature" == "intron" ]]
+		then
+			begin=$(echo $line | awk -F "\t" '{print $4}')
+			end=$(echo $line | awk -F "\t" '{print $5}')
+			length=$((end-begin+1))
+			echo -e "$name:intron\t$length" >> temp.tsv
+		fi
+	done
+	if [[ "$#" -ne 1 ]]
+	then
+		head -n1 temp.tsv
+	fi
+	if [[ "$table" = true ]]
+	then
+		sort -t$'\t' -k1 <(tail -n +2 temp.tsv) | column -t -s$'\t'
+	else
+		sort -t$'\t' -k1 <(tail -n +2 temp.tsv)
+	fi
+	if [[ "$#" -ne 1 ]]
+	then
+		echo
+	fi
 done
-
-
-	
+if [ -e temp.tsv ]
+then
+	rm temp.tsv
+fi
