@@ -84,9 +84,13 @@ then
 		if [[ "$feature" == "mRNA" ]]
 		then
 			# The parent attribute of mRNA is the ID of gene
+			transcriptID=$(echo $line | awk -F "\t" '{print $9}' | awk -F "ID=" '{print $2}' | awk -F ";" '{print $1}')
 			ID=$(echo $line | awk -F "\t" '{print $9}' | awk -F "Parent=" '{print $2}' | awk -F ";" '{print $1}')
 			geneline=$(echo "$line" | sed 's/\tmRNA\t/\tgene\t/' | sed "s/ID=.\+$/ID=$ID/")
-			echo $geneline >> temp.gff
+			if [[ "$transcriptID" == *-mRNA-1 ]]
+			then
+				echo $geneline >> temp.gff
+			fi
 			echo $line >> temp.gff
 		else
 			echo $line >> temp.gff
@@ -104,13 +108,16 @@ then
 	for line in $(cat $gff)
 	do
 		feature=$(echo $line | awk -F "\t" '{print $3}')
+		if [[ "$feature" == "mRNA" ]]
+		then
+			count=0
+		fi
 		if [[ "$feature" == "intron" ]]
 		then
-			count=1
+			count=$((count+1))
 			parent=$(echo $line | awk -F "\t" '{print $9}' | awk -F "=" '{print $2}')
 			newline=$(echo $line | sed "s/Parent=.\+$/ID=$parent:intron$count;Parent=$parent/")
 			echo $newline >> temp.gff
-			count=$((count+1))
 		else
 			echo $line >> temp.gff
 		fi
