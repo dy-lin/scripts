@@ -24,8 +24,12 @@ then
 fi
 gff=$1
 
-IFS=$'\n'
+if [[ "$intron" = true && "$(grep -c '	intron	' $gff)" -eq 0 ]]
+then
+	echo "There are no intron annotations in this GFF."
+fi
 
+IFS=$'\n'
 for line in $(cat $gff)
 do
 	feature=$(echo $line | awk -F "\t" '{print $3}')
@@ -42,7 +46,12 @@ do
 		begin=$(echo $line | awk -F "\t" '{print $4}')
 		end=$(echo $line | awk -F "\t" '{print $5}')
 		length=$((end-begin+1))
-		echo -e "$name:intron\t$length"
+		if [[ "$intron" = true ]]
+		then
+			echo -e "$name:intron\t$length"
+		fi
 	fi
 done
+
+
 	
