@@ -22,7 +22,7 @@ then
 	echo "Logfile for $(readlink -f $alignment)" >> log${i}.log
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a $alignment 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
-	echo "File: $(readlink -f $alignment)"
+	echo "Alignment: $(readlink -f $alignment)"
 	echo -e "Coverage: ${median}x\n"
 # If the BAM file is unsorted, sort it first
 	i=$((i+1))
@@ -38,7 +38,7 @@ then
 	echo "Calculating coverage..." 1>&2
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
-	echo "File: $(readlink -f $alignment)"
+	echo "Alignment: $(readlink -f $alignment)"
 	echo -e "Coverage: ${median}x\n"
 	i=$((i+1))
 # If there are three arguments, assume they are assembly and reads
@@ -74,11 +74,12 @@ then
 		bwa index $assembly 2>> log${i}.log
 	fi
 	echo "Calculating coverage..." 1>&2 
-	bwa mem -t 48 $assembly $readsf $readsb 2>> log${i}.log | samtools view -F 4 -b 2>> log${i}.log | samtools sort > ${filename}.reads.sorted.bam 2>> log${i}.log
+	bwa mem -t 48 -xintractg $assembly $readsf $readsb 2>> log${i}.log | samtools view -F 4 -b 2>> log${i}.log | samtools sort > ${filename}.reads.sorted.bam 2>> log${i}.log
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 #	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
-	echo "File: $(readlink -f $assembly)"
+	echo "Assembly: $(readlink -f $assembly)"
+	echo "Reads: $(readlink -f $reads)"
 	echo -e "Coverage: ${median}x\n"
 	i=$((i+1))
 # If two, assume first is assembly second is interleaved reads.
@@ -94,7 +95,7 @@ then
 		echo "USAGE: $(basename $0) <FASTA file> <inter-leaved reads>" 1>&2
 		exit 1
 	fi
-	if [[ "$reads" != *.f?.gz && "$reads" != *.fq && "$reads" != *.fastq ]]
+	if [[ "$reads" != *.f?.gz && "$reads" != *.fq && "$reads" != *.fastq  && "$reads" != *.fa ]]
 	then
 		echo "Two arguments detected. Invalid reads files." 1>&2
 		echo "USAGE: $(basename $0) <FASTA file> <inter-leaved reads>" 1>&2
@@ -110,11 +111,12 @@ then
 		bwa index $assembly 2>> log${i}.log
 	fi
 	echo "Calculating coverage..." 1>&2
-	bwa mem -t 48 $assembly $reads 2>> log${i}.log | samtools view -F 4 -b 2>> log${i}.log | samtools sort > ${filename}.reads.sorted.bam 2>> log${i}.log
+	bwa mem -t 48 -p -xintractg $assembly $reads 2>> log${i}.log | samtools view -q 1 -F 4 -b 2>> log${i}.log | samtools sort > ${filename}.reads.sorted.bam 2>> log${i}.log
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 #	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
-	echo "File: $(readlink -f $assembly)"
+	echo "Assembly: $(readlink -f $assembly)"
+	echo "Reads: $(readlink -f $reads)"
 	echo -e "Coverage: ${median}x\n"
 	i=$((i+1))
 # Or the arguments are invalid
