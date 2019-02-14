@@ -2,27 +2,15 @@
 # Using a non-zero exit status as a 'return value', so commenting out pipefail
 # set -eu -o pipefail
 PROGRAM=$(basename $0)
-organism=honeybee
-gethelp=false
-while getopts :hO: opt
-do
-	case $opt in
-		h) gethelp=true;;
-		O) organism=$OPTARG;;
-		\?) echo "$PROGRAM: invalid option: $OPTARG" >&2; exit 1;;
-	esac
-done
-shift "$((OPTIND-1))"
-if [[ "$#" -ne 9 || "$gethelp" = true ]]
+if [[ "$#" -ne 6 && "$#" -ne 5 ]]
 then
-	if [[ "$#" -ne 9 && "$#" -gt 0 ]]
+	if [[ "$#" -ne 6  && "$#" -ne 5 && "$#" -gt 0 ]]
 	then
 		echo "ERROR: Incorrect number of arguments!" 1>&2
 	fi
-	echo "USAGE: $(basename $0) <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end> <scaffolds> <transcripts> <GFF>" 1>&2
-	echo -e "\tTo run jackhmmer without a sweep, set: <sweep start> = <sweep end>" 1>&2
+	echo "USAGE: $PROGRAM <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end>" 1>&2
+	echo -e "\tTo run jackhmmer without a sweep, just input one value instead of two." 1>&2
 	echo "DESCRIPTION: Runs jackhmmer of literature AMPs against a protein database in order to find a specific class of AMP using homology-based search. Sweep is run as to find the best threshold to run jackhmmer." 1>&2
-	echo -e "OPTIONS:\n\t-h\t\tShow help menu\n\t-O <organism>\tCurrently supports 'spruce' or 'honeybee'" 1>&2
 	exit 1
 fi
 
@@ -31,12 +19,12 @@ lit=$2
 database=$3
 N=$4
 begin=$5
-end=$6
-scaffolds=$7
-transcripts=$8
-gff=$9
-
-
+if [[ "$#" -eq 6 ]]
+then
+	end=$6
+else
+	end=$5
+fi
 
 function run_jackhmmer() {
 	AMP=$1
@@ -217,68 +205,5 @@ then
 	echo "Running seqtk..."
 	seqtk subseq $database <(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u) > jackhmmer-blast-hits.faa
 fi
-if [[ "$organism" == "spruce" ]]
-then
-	# GET scaffolds, gffs and transcripts and then run in WS777111-proteins/test
-	echo "Fetching scaffolds, transcripts and GFF files..."
-	if [ ! -e "scaffolds" ]
-	then
-		mkdir scaffolds
-	fi
 
-	if [ ! -e "transcripts" ]
-	then
-		mkdir transcripts
-	fi
 
-	if [ ! -e "gffs" ]
-	then
-		mkdir gffs
-	fi
-
-	if [ ! -e "igv" ]
-	then
-		mkdir igv
-	fi
-
-	for i in $(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u)
-	do
-		# Get scaffold name
-		temp=${i#*-}
-		scaffold=${temp%-*-gene-*-mRNA-?}
-		if [ ! -e "scaffolds/${scaffold}.scaffold.fa" ]
-		then
-			seqtk subseq $scaffolds <(echo $scaffold) > scaffolds/${scaffold}.scaffold.fa
-			length=$(tail -n 1 "scaffolds/${scaffold}.scaffold.fa" | head -c -1 | wc -m)
-			echo -e "##gff-version 3\n##sequence-region $scaffold 1 $length" > gffs/${scaffold}.gff
-			cd igv
-			# Create IGV softlinks
-			ln -sf ../scaffolds/${scaffold}.scaffold.fa
-			ln -sf ../gffs/${scaffold}.gff
-			cd ..
-		fi
-		seqtk subseq $transcripts <(echo $i) >> transcripts/${scaffold}.transcripts.fa
-		grep $i $gff >> gffs/${scaffold}.gff
-	done
-
-	date=$(date | awk '{if($3<10) {print "0" $3 $2 $6} else {print $3 $2 $6}}')
-	cd scaffolds
-	cat *.scaffold.fa > ../all.scaffolds.${date}.fa
-	cd ../transcripts
-	cat *.transcripts.fa > ../all.transcripts.${date}.fa
-	cd ../gffs
-	cat *.gff > ../all.${date}.gff
-	cd ..
-else
-	awk 'NR==1 || NR==7' $gff > amp.gff
-	# Honeybee data is extracted from NCBI and named differently
-	for i in $(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u)
-	do
-		# No need to fetch scaffolds, honeybee genome is in one piece
-		# Fetch transcripts
-		seqtk subseq $transcripts <(echo $i) >> amp.transcripts.fa
-		# Fetch GFF
-		grep $i $gff >> amp.gff
-	done
-fi
-echo "DONE!"
