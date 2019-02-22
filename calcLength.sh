@@ -35,26 +35,27 @@ do
 	then
 		rm temp.tsv
 	fi
-	echo "$(basename $gff):" >> temp.tsv
 	if [[ "$intron" = true && "$(grep -c '	intron	' $gff)" -eq 0 ]]
 	then
+		echo "$(basename $gff):"
 		if [[ "$suppress" = true ]]
 		then
-			echo "Default output of transcript lengths has been suppressed." >> temp.tsv
+			echo "Default output of transcript lengths has been suppressed."
 		fi
-		echo "There are no intron annotations in this GFF." >> temp.tsv
-		intron=false
-		if [[ "$suppress" = true ]]
-		then
-			if [[ "$#" -ne 1 ]]
-			then
-				head -n1 $gff
-				cat <(tail -n +2 $gff)
-				continue
-			fi
-		fi
+		echo "There are no intron annotations in this GFF."
+		echo
+		continue
+#		if [[ "$suppress" = true ]]
+#		then
+#			if [[ "$#" -ne 1 ]]
+#			then
+#				cat $gff
+#				continue
+#			fi
+#		fi
 	fi
-	for line in $(cat $gff)
+	echo "$(basename $gff):" >> temp.tsv
+	for line in $(awk '!/^#/' $gff)
 	do
 		feature=$(echo $line | awk -F "\t" '{print $3}')
 		if [[ "$feature" == "mRNA" ]]
@@ -70,10 +71,11 @@ do
 		fi
 		if [[ "$intron" = true && "$feature" == "intron" ]]
 		then
+			name=$(echo $line | awk -F "\t" '{print $9}' | awk -F ";" '{print $1}' | sed 's/^ID=//')
 			begin=$(echo $line | awk -F "\t" '{print $4}')
 			end=$(echo $line | awk -F "\t" '{print $5}')
 			length=$((end-begin+1))
-			echo -e "$name:intron\t$length" >> temp.tsv
+			echo -e "$name\t$length" >> temp.tsv
 		fi
 	done
 	if [[ "$#" -ne 1 ]]
