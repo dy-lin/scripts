@@ -50,14 +50,14 @@ then
 	temp=$(basename $assembly)
 	filename=${temp%.*}
 	# Check if arguments have the correct file extensions
-	if [[ "$assembly" != *.fa && "$assembly" != *.fasta && "$assembly" != *.f?.gz ]]
+	if [[ "$assembly" != *.fa && "$assembly" != *.fasta && "$assembly" != *.fa.gz ]]
 	then
 		echo "Three arguments detected. Invalid assembly file." 1>&2
 		echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>" 1>&2
 		exit 1
 	fi
 
-	if [[ "$readsf" != *.f?.gz || "$readsb" != *.f?.gz ]]
+	if [[ "$readsf" != *.f?.gz || "$readsb" != *.f?.gz ]] && [[ "$readsf" != *.f? || "$readsb" != *.f? ]] && [[ "$readsf" != *.fast? || "$readsb" != *.fast? ]] && [[ "$readsf" != *.fast?.gz || "$readsb" != *.fast?.gz ]]
 	then
 		echo "Three arguments detected. Invalid reads files." 1>&2
 		echo "USAGE: $(basename $0) <FASTA file> <reads> <reads>" 1>&2
@@ -74,12 +74,12 @@ then
 		bwa index $assembly 2>> log${i}.log
 	fi
 	echo "Calculating coverage..." 1>&2 
-	bwa mem -t 48 -xintractg $assembly $readsf $readsb 2>> log${i}.log | samtools view -F 4 -b 2>> log${i}.log | samtools sort > ${filename}.reads.sorted.bam 2>> log${i}.log
+	bwa mem -t 48 $assembly $readsf $readsb 2>> log${i}.log | samtools view -F 4 -b 2>> log${i}.log | samtools sort > ${filename}.reads.sorted.bam 2>> log${i}.log
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 #	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
 	echo "Assembly: $(readlink -f $assembly)"
-	echo "Reads: $(readlink -f $reads)"
+	echo "Reads: $(readlink -f $readsf) $(readlink -f $readsb)"
 	echo -e "Coverage: ${median}x\n"
 	i=$((i+1))
 # If two, assume first is assembly second is interleaved reads.
@@ -111,7 +111,7 @@ then
 		bwa index $assembly 2>> log${i}.log
 	fi
 	echo "Calculating coverage..." 1>&2
-	bwa mem -t 48 -p -xintractg $assembly $reads 2>> log${i}.log | samtools view -q 1 -F 4 -b 2>> log${i}.log | samtools sort > ${filename}.reads.sorted.bam 2>> log${i}.log
+	bwa mem -t 48 -p $assembly $reads 2>> log${i}.log | samtools view -q 1 -F 4 -b 2>> log${i}.log | samtools sort > ${filename}.reads.sorted.bam 2>> log${i}.log
 	result=$(calculate.sh -m <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam 2>> log${i}.log) 2>> log${i}.log) 2>> log${i}.log)
 #	result=$(median.R <(awk '{print $3}' <(samtools depth -a ${filename}.reads.sorted.bam)) 2> /dev/null)
 	median=$(echo $result | awk '{print $2}' 2>> log${i}.log)
