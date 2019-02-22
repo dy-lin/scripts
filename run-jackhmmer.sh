@@ -101,18 +101,35 @@ then
 
 	if [ "$end" -ne 0 ] && [ "$begin" -ne "$end" ]
 	then
-		# Existence test used for debugging purposes
-		if [ ! -e "guide-proteins.txt" ]
+		if [[ ! -e guide-proteins.txt ]]
 		then
 			echo "Making BLAST database..."
 			makeblastdb -dbtype prot -in $database -out guide-blast
 			echo -e "\nBLASTing..."
 			blastp -db guide-blast -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48
 			# Filter blastp results for 99% identity sequences
-			awk '{if($3>99) print $2}' guide-blast.blastp | sort -u > guide-proteins.txt
-			seqtk subseq $database guide-proteins.txt > guide-proteins.faa
+			cutoff=99
+			while true
+			do
+				awk -v var=$cutoff '{if($3>var) print $2}' guide-blast.blastp | sort -u > guide-proteins.txt
+				size=$(ls -l guide-proteins.txt | awk '{print $5}')
+				if [[ "$size" -eq 0 ]]
+				then
+					cutoff=$((cutoff-1))
+				else
+					if [[ "$cutoff" -le 50 ]]
+					then
+						echo "There are no proteins that align significantly that can be used as your guide proteins. All proteins align with percent identity 50% or lower."
+						rm guide-proteins.txt
+						exit 1
+					else
+						echo "Guide proteins align with percent identity ${cutoff}% or higher."
+						break
+					fi
+				fi
+			done
 		fi
-
+		seqtk subseq $database guide-proteins.txt > guide-proteins.faa
 		# See what threshold we lose these proteins - do a jackhmmer sweep where grep for guide-proteins at each threshold
 		echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 		jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
@@ -130,25 +147,32 @@ then
 			# If sweep = 2, the sweep start is too low
 			elif [ "$sweep" -eq 2 ]
 			then
-				if [ "$begin" -eq 1 ]
-				then
-					echo "<sweep start> cannot be lowered anymore. Your guide proteins are nowhere to be found." 1>&2
-					exit 1
-				fi
 				end=$begin
-				begin=$((begin-difference))
-				if [ "$begin" -eq 0 ]
+				if [ "$begin" -ne 1 ]
+				then
+					begin=$((begin-difference))
+				fi
+				if [ "$begin" -le 0 ]
 				then
 					begin=1
 				fi
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
+				if [ "$begin" -eq 1 ]
+				then
+					echo "<sweep start> cannot be lowered anymore. Your guide proteins are nowhere to be found." 1>&2
+					rm guide-proteins.txt
+					exit 1
+				fi
 			# If sweep = 3, then the whole sweep finished with no problems -- need to lower the whole interval
 			elif [[ "$sweep" -eq 3 ]]
 			then
+				interval=$((end-begin))
 				begin=$end
-				end=$((begin + step))
+				end=$((begin + interval))
+				jackhmmer-sweep.sh $AMP $lit $database $N $((begin+step)) $((end-step)) $step
+				sweep=$?
 			# If sweep > 2 (aka a threshold), then reduce the interval and find the threshold
 
 			elif [ "$sweep" -gt 3 ]
