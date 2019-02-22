@@ -14,11 +14,11 @@ do
 done
 shift $((OPTIND-1))
 
-if [[ "$#" -ne 1 && "$gethelp" = true ]]
+if [[ "$#" -ne 1 ||  "$gethelp" = true ]]
 then
 	echo "USAGE: $PROGRAM <GFF file>" 1>&2
 	echo "DESCRIPTON: Takes a (maker generated) GFF file and adds introns and genes." 1>&2
-	echo -e "OPTIONS:\n\t-g Add genes\n\t-h\tShow help menu\n\t-i\tAdd introns" 1>&2
+	echo -e "OPTIONS:\n\t-h\tShow help menu\n\t-i\tAdd introns" 1>&2
 	exit 1
 fi
 
@@ -116,7 +116,12 @@ then
 		then
 			count=$((count+1))
 			parent=$(echo $line | awk -F "\t" '{print $9}' | awk -F "=" '{print $2}')
-			newline=$(echo $line | sed "s/Parent=.\+$/ID=$parent:intron$count;Parent=$parent/")
+			if [[ "$count" -eq 1 ]]
+			then
+				newline=$(echo $line | sed "s/Parent=.\+$/ID=$parent:intron;Parent=$parent/")
+			else
+				newline=$(echo $line | sed "s/Parent=.\+$/ID=$parent:intron$count;Parent=$parent/")
+			fi
 			echo $newline >> temp.gff
 		else
 			echo $line >> temp.gff
