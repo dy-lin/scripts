@@ -89,12 +89,12 @@ if num_gaps !=0:
 		gffList=[]
 		for index, line in enumerate(gffFile):
 			gffList.append(line.rstrip().split("\t"))
-
 		# Storing columns/fields of 3, 4, 5, and parts of 8
 		features=[]
 		for i in gffList:
-			temp= i[8].split(";")
-			features.append([i[2],i[3],i[4],temp[0][3:]])
+			if i[0][0] != "#":
+				temp=i[8].split(";")
+				features.append([i[2],i[3],i[4],temp[0][3:]])
 	
 		# Storing features that are not mRNA or genes, as to avoid repeat 'features' with gaps in the report
 		nonmRNA=[]
