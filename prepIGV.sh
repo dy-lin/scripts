@@ -69,8 +69,8 @@ then
 			echo -e "##gff-version 3\n##sequence-region $scaffold 1 $length" > gffs/${scaffold}.gff
 			cd igv
 			# Create IGV softlinks
-			ln -sf ../scaffolds/${scaffold}.scaffold.fa
-			ln -sf ../gffs/${scaffold}.gff
+			ln -sf $(readlink -f ../scaffolds/${scaffold}.scaffold.fa)
+			ln -sf $(readlink -f ../gffs/${scaffold}.gff)
 			cd ..
 		fi
 		seqtk subseq $transcripts <(echo $i) >> transcripts/${scaffold}.transcripts.fa
@@ -80,10 +80,31 @@ then
 	date=$(date | awk '{if($3<10) {print "0" $3 $2 $6} else {print $3 $2 $6}}')
 	cd scaffolds
 	cat *.scaffold.fa > ../all.scaffolds.${date}.fa
+	for file in $(ls ../all.scaffolds.*.fa)
+	do
+		if [[ "../all.scaffolds.${date}.fa" -nt "$file" ]]
+		then
+			rm "$file"
+		fi
+	done
 	cd ../transcripts
 	cat *.transcripts.fa > ../all.transcripts.${date}.fa
+	for file in $(ls ../all.transcripts.${date}.fa)
+	do
+		if [[ "../all.scaffolds.${date}.fa" -nt "$file" ]]
+		then
+			rm "$file"
+		fi
+	done
 	cd ../gffs
 	cat *.gff > ../all.${date}.gff
+	for file in $(ls ../all.*.gff)
+	do
+		if [[ "../all.${date}.gff" -nt "$file" ]]
+		then
+			rm "$file"
+		fi
+	done
 	cd ..
 	echo "...Done." 1>&2
 
@@ -125,20 +146,36 @@ then
 		then
 			echo -e "##gff-version 3\n##sequence-region $transcript_name 1 $length" > gffs/${transcript_name}.gff
 		fi
+		# remove gene annotation as it's not a gene -- intron has been removed
 	#	echo -e "$transcript_name\tORFfinder\tgene\t1\t$length\t.\t$strand\t.\tID=${transcript_name}" >> gffs/${transcript_name}.gff
 		echo -e "$transcript_name\tORFfinder\tmRNA\t1\t$length\t.\t$strand\t.\tID=${transcript_name}-mRNA-1;Parent=${transcript_name}" >> gffs/${transcript_name}.gff
 		echo -e "$transcript_name\tORFfinder\texon\t$cds_begin\t$cds_end\t.\t$strand\t0\tID=${transcript_name}:exon;Parent=${transcript_name}-mRNA-1" >> gffs/${transcript_name}.gff
 		echo -e "$transcript_name\tORFfinder\tCDS\t$cds_begin\t$cds_end\t.\t$strand\t0\tID=${transcript_name}:cds;Parent=${transcript_name}-mRNA-1" >> gffs/${transcript_name}.gff 
 		cd igv
-		ln -sf ../transcripts/${transcript_name}.transcript.fa
-		ln -sf ../gffs/${transcript_name}.gff
+		ln -sf $(readlink -f ../transcripts/${transcript_name}.transcript.fa)
+		ln -sf $(readlink -f ../gffs/${transcript_name}.gff)
 		cd ..
 	done
 	date=$(date | awk '{if($3<10) {print "0" $3 $2 $6} else {print $3 $2 $6}}')
 	cd transcripts
 	cat *.transcript.fa > ../all.transcripts.${date}.fa
+	# if older files exist, remove them
+	for file in $(ls ../all.transcripts.*.fa)
+	do
+		if [[ "../all.transcripts.${date}.fa" -nt "$file" ]]
+		then
+			rm "$file"
+		fi
+	done
 	cd ../gffs
 	cat *.gff > ../all.${date}.gff
+	for file in $(ls ../all.*.gff)
+	do
+		if [[ "../all.${date}.gff" -nt "$file" ]]
+		then
+			rm "$file"
+		fi
+	done
 	cd ..
 	echo "...Done." 1>&2
 elif [[ "$transcripts" != false && "$scaffolds" = false && "$gff" != false ]]
@@ -158,5 +195,6 @@ then
 	echo "....Done." 1>&2
 else
 	echo "Invalid combination of options." 1>&2
+	echo -e "OPTIONS:\n\t-s\tscaffold FASTA file\n\t-t\ttranscript FASTA file\n\t-g\tGFF file" 1>&2
 	exit 1
 fi
