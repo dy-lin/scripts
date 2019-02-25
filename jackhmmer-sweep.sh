@@ -7,7 +7,7 @@ N=$4
 begin=$5
 end=$6
 step=$7
-difference=$((end-begin))
+difference=$(($((end+step))-$((begin-step))))
 for i in `seq $begin $step $end`
 do	
 	outfile="jackhmmer_bs${i}_N${N}.out"
@@ -38,13 +38,19 @@ do
 		if [ "$count" -eq 0 ]
 		then
 			# If count is 0 AND on the first threshold tried, the threshold is too high and needs to be lowered
-			if [ "$i" -eq "$begin" ]
+			if [ "$threshold" -eq "$begin" ]
 			then
 #				difference=$((end-begin))
 				if [[ "$((begin-difference))" -le 0 && "$begin" -ne 1 ]]
 				then
 					echo "Your <sweep start> value is too high...Lowering it to 1."
 				else
+
+					# If first threshold tried loses proteins and the step is one, it means that the ideal threshold is i-1
+					if [ "$step" -eq 1 ]
+					then
+						exit $threshold
+					fi
 					if [ "$begin" -ne 1 ]
 					then
 						echo "Your <sweep start> value is too high...Lowering it to $((begin-difference))."

@@ -121,6 +121,7 @@ then
 					then
 						echo "There are no proteins that align significantly that can be used as your guide proteins. All proteins align with percent identity 50% or lower."
 						rm guide-proteins.txt
+						echo "Status: Failure."
 						exit 1
 					else
 						echo "Guide proteins align with percent identity ${cutoff}% or higher."
@@ -156,7 +157,7 @@ then
 				then
 					begin=1
 				fi
-				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
+				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
 				if [ "$begin" -eq 1 ]
@@ -165,13 +166,18 @@ then
 					rm guide-proteins.txt
 					exit 1
 				fi
-			# If sweep = 3, then the whole sweep finished with no problems -- need to lower the whole interval
+			# If sweep = 3, then the whole sweep finished with no problems -- need to increase the whole interval
 			elif [[ "$sweep" -eq 3 ]]
 			then
 				interval=$((end-begin))
 				begin=$end
 				end=$((begin + interval))
-				jackhmmer-sweep.sh $AMP $lit $database $N $((begin+step)) $((end-step)) $step
+				if [ "$step" -eq 1 ]
+				then
+					step=10
+				fi
+				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
+				jackhmmer-sweep.sh $AMP $lit $database $N $((begin+step)) $end $step
 				sweep=$?
 			# If sweep > 2 (aka a threshold), then reduce the interval and find the threshold
 
@@ -185,7 +191,8 @@ then
 				elif [ "$step" -eq 10 ]
 				then
 					step=1
-				else
+				elif [ "$step" -eq 1 ]
+				then
 					break
 				fi
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
@@ -218,16 +225,23 @@ fi
 echo "Running seqtk..."
 seqtk subseq $database <(awk '/^>>/ {print $2}' $outfile | sort -u) > jackhmmer-hits.faa
 
-# Existence Test for debugging purposes
-if [ ! -e "jackhmmer-blast-hits.faa" ]
+if [ -e jackhmmer-hits.faa ]
 then
-	echo "Making BLAST database..."
-	makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer
-
-	echo -e "\nBLASTing..."
-	blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48
-	echo "Running seqtk..."
-	seqtk subseq $database <(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u) > jackhmmer-blast-hits.faa
+	file_size=$(ls -l jackhmmer-hits.faa | awk '{print $5}')
+	if [ "$file_size" -eq 0 ]
+	then
+		echo "There were no jackhmmer hits."
+		echo "Status: Failure."
+		exit 1
+	fi
 fi
 
+echo "Making BLAST database..."
+makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer
 
+echo -e "\nBLASTing..."
+blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48
+echo "Running seqtk..."
+seqtk subseq $database <(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u) > jackhmmer-blast-hits.faa
+
+echo "Status: Success."
