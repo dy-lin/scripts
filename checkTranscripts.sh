@@ -1,5 +1,10 @@
 #!/bin/bash
-
+if [[ ! -s jackhmmer-blast-hits.faa ]]
+then
+	echo "USAGE: $(basename $0)" 1>&2
+	echo "DESCRIPTION: Checks whether or not each ORF hit is unique to one transcript." 1>&2
+	exit 1
+fi
 hits=$(awk '/^>/ {print $1}' jackhmmer-blast-hits.faa | wc -l)
 transcripts=$(awk '/^>/ {print $1}' jackhmmer-blast-hits.faa | awk -F ":" '{print $1}' | awk -F "_" '{print $2}' | sort -u | wc -l)
 

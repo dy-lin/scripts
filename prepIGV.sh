@@ -79,28 +79,28 @@ then
 
 	date=$(date | awk '{if($3<10) {print "0" $3 $2 $6} else {print $3 $2 $6}}')
 	cd scaffolds
-	cat *.scaffold.fa > ../all.scaffolds.${date}.fa
+	cat *.scaffold.fa > ../all.scaffolds.raw.${date}.fa
 	for file in $(ls ../all.scaffolds.*.fa)
 	do
-		if [[ "../all.scaffolds.${date}.fa" -nt "$file" ]]
+		if [[ "../all.scaffolds.raw.${date}.fa" -nt "$file" ]]
 		then
 			rm "$file"
 		fi
 	done
 	cd ../transcripts
-	cat *.transcripts.fa > ../all.transcripts.${date}.fa
-	for file in $(ls ../all.transcripts.${date}.fa)
+	cat *.transcripts.fa > ../all.transcripts.raw.${date}.fa
+	for file in $(ls ../all.transcripts.*.fa)
 	do
-		if [[ "../all.scaffolds.${date}.fa" -nt "$file" ]]
+		if [[ "../all.transcripts.raw.${date}.fa" -nt "$file" ]]
 		then
 			rm "$file"
 		fi
 	done
 	cd ../gffs
-	cat *.gff > ../all.${date}.gff
+	cat *.gff > ../all.raw.${date}.gff
 	for file in $(ls ../all.*.gff)
 	do
-		if [[ "../all.${date}.gff" -nt "$file" ]]
+		if [[ "../all.raw.${date}.gff" -nt "$file" ]]
 		then
 			rm "$file"
 		fi
@@ -156,6 +156,26 @@ then
 		ln -sf $(readlink -f ../gffs/${transcript_name}.gff)
 		cd ..
 	done
+	if [[ -s "jackhmmer-blast-hits.trimmed.faa" ]]
+	then
+		amp=$(pwd | awk -F "/" ' {print $(NF-2)}')
+		mkdir -p transcripts/${amp}-only/cds
+		# GET AMP only
+		for i in $(grep '^>' jackhmmer-blast-hits.trimmed.faa | grep -v "\-like" | awk -F "_" '{print $2}' | awk -F ":" '{print $1}' | sort -u )
+		do
+			cp transcripts/${i}.transcript.fa transcripts/${amp}-only/
+		done
+		
+		# GET CDS
+		for i in $(grep '^>' jackhmmer-blast-hits.trimmed.faa | grep -v '\-like' | awk '{print $1}' | awk -F "|" '{print $2}')
+		do
+			j=$(echo $i | awk -F "_" '{print $2}' | awk -F ":" '{print $1}')
+			grep -A1 --no-group-separator $i ../*.cds.fa > transcripts/${amp}-only/cds/${j}.cds.fa
+		done
+
+		cat transcripts/${amp}-only/cds/*.cds.fa > transcripts/${amp}-only/all.cds.fa
+	fi
+	
 	date=$(date | awk '{if($3<10) {print "0" $3 $2 $6} else {print $3 $2 $6}}')
 	cd transcripts
 	cat *.transcript.fa > ../all.transcripts.${date}.fa

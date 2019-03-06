@@ -86,6 +86,15 @@ then
 			# The parent attribute of mRNA is the ID of gene
 			transcriptID=$(echo $line | awk -F "\t" '{print $9}' | awk -F "ID=" '{print $2}' | awk -F ";" '{print $1}')
 			ID=$(echo $line | awk -F "\t" '{print $9}' | awk -F "Parent=" '{print $2}' | awk -F ";" '{print $1}')
+			if [[ -z "$ID" ]]
+			then
+				if [[ -e "temp.gff" ]]
+				then
+					rm temp.gff
+				fi
+				echo "$transcriptID is missing the Parent attribute." 1>&2
+				exit 1
+			fi
 			geneline=$(echo "$line" | sed 's/\tmRNA\t/\tgene\t/' | sed "s/ID=.\+$/ID=$ID/")
 			if [[ "$transcriptID" == *-mRNA-1 ]]
 			then

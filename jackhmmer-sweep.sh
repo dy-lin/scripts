@@ -7,7 +7,13 @@ N=$4
 begin=$5
 end=$6
 step=$7
-difference=$(($((end+step))-$((begin-step))))
+if [[ "$begin" -eq 0 ]]
+then
+	difference=$end
+else
+	difference=$((end-begin))
+fi
+
 for i in `seq $begin $step $end`
 do	
 	outfile="jackhmmer_bs${i}_N${N}.out"
@@ -16,7 +22,11 @@ do
 	# If N-5 does not exist, either jackhmmer has never been run for that threshold yet, or it had not converged previously.
 	if [ ! -e "jackhmmer_bs${i}_N$((N-5)).out" ]
 	then
-		jackhmmer --noali -T $i -N $N -o $outfile $AMP $database
+		if [ ! -e "jackhmmer_bs${i}_N${N}.out" ]
+		then
+			echo "COMMAND: jackhmmer --noali -T $i -N $N -o $outfile $AMP $database"
+			jackhmmer --noali -T $i -N $N -o $outfile $AMP $database
+		fi
 	else
 		echo "Bit score thresold $i contains all guide proteins..."
 		continue
@@ -28,9 +38,11 @@ do
 	then
 		echo "At bit score threshold $i, not all queries have converged. Increasing N to $((N+5))."
 		rm $outfile
+		echo "Exit code: 1"
 		exit 1
 	fi
-	threshold=$(echo $outfile | awk -F "_" '{print $2}' | awk -F "s" '{print $2}')
+	threshold=$i
+#	threshold=$(echo $outfile | awk -F "_" '{print $2}' | awk -F "s" '{print $2}')
 	for guide in $(cat guide-proteins.txt)
 	do
 		count=$(grep -c $guide $outfile)
@@ -41,21 +53,31 @@ do
 			if [ "$threshold" -eq "$begin" ]
 			then
 #				difference=$((end-begin))
-				if [[ "$((begin-difference))" -le 0 && "$begin" -ne 1 ]]
+				if [[ "$((begin-difference))" -le 0 && "$begin" -ne 0 ]]
 				then
-					echo "Your <sweep start> value is too high...Lowering it to 1."
+					echo "Your <sweep start> value is too high...Lowering it to the lowest possible value: 0. Exit code: 2"
 				else
 
 					# If first threshold tried loses proteins and the step is one, it means that the ideal threshold is i-1
 					if [ "$step" -eq 1 ]
 					then
-						exit $threshold
+						if [[ "$threshold" -ge 1 && "$threshold" -le 3 ]]
+						then
+							echo "Threshold is between 1 and 3."
+							echo "Exit code: 0"
+							exit 0
+						else
+							echo "The first threshold in the sweep loses guide protein ${guide}..."
+							echo "Exit code: $threshold"
+							exit $threshold
+						fi
 					fi
-					if [ "$begin" -ne 1 ]
+					if [ "$begin" -ne 0 ]
 					then
 						echo "Your <sweep start> value is too high...Lowering it to $((begin-difference))."
 					fi
 				fi
+					echo "Exit code: 2"
 					exit 2
 			else
 				echo "Bit score threshold $i loses guide protein ${guide}..."
@@ -64,10 +86,12 @@ do
 				then
 					echo "Therefore, the ideal threshold will be between $((threshold-step)) and $threshold!"
 				fi
+				echo "Exit code: $threshold"
 				exit $threshold
 			fi
 		fi
 	done
 	echo "Bit score threshold ${threshold} contains all guide proteins..."
 done
+echo "Exit code: 3"
 exit 3

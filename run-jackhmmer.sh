@@ -4,11 +4,11 @@
 PROGRAM=$(basename $0)
 if [[ "$#" -ne 6 && "$#" -ne 5 ]]
 then
-	if [[ "$#" -ne 6  && "$#" -ne 5 && "$#" -gt 0 ]]
+	if [[ "$#" -gt 0 ]]
 	then
 		echo "ERROR: Incorrect number of arguments!" 1>&2
 	fi
-	echo "USAGE: $PROGRAM <literature AMPs> <NCBI defensins> <protein database> <# of iterations> <sweep start> <sweep end>" 1>&2
+	echo "USAGE: $PROGRAM <literature AMPs> <class of AMPs> <protein database> <# of iterations> <sweep start> <sweep end>" 1>&2
 	echo -e "\tTo run jackhmmer without a sweep, just input one value instead of two." 1>&2
 	echo "DESCRIPTION: Runs jackhmmer of literature AMPs against a protein database in order to find a specific class of AMP using homology-based search. Sweep is run as to find the best threshold to run jackhmmer." 1>&2
 	exit 1
@@ -19,11 +19,51 @@ lit=$2
 database=$3
 N=$4
 begin=$5
-if [[ "$#" -eq 6 ]]
+
+if [[ ! -e $AMP ]]
 then
+	echo "ERROR: $(basename $AMP) does not exist."
+	exit 1
+fi
+
+if [[ ! -e $lit ]]
+then
+	echo "ERROR: $(basename $lit) does not exist."
+	exit 1
+fi
+
+if [[ ! -e $database ]]
+then
+	echo "ERROR: $(basename $lit) does not exist."
+	exit 1
+fi
+
+if [[ "$N" -le 0 ]]
+then
+	echo "ERROR: Invalid number of iterations: $N"
+	exit 1
+fi
+
+if [[ ! -z $6 ]]
+then
+	if [[ "$begin" -le 0 ]]
+	then
+		echo "ERROR: Invalid starting threshold: $begin"
+		exit 1
+	fi
 	end=$6
+	if [[ "$end" -le 0 ]]
+	then
+		echo "ERROR: Invalid ending threshold: $end"
+		exit 1
+	fi
 else
-	end=$5
+	if [[ "$begin" -le 0 ]]
+	then
+		echo "ERROR: Invalid threshold: $begin"
+		exit 1
+	fi
+	end=$begin
 fi
 
 function run_jackhmmer() {
@@ -33,12 +73,13 @@ function run_jackhmmer() {
 	N=$4
 	threshold=$5
 
-	echo "Bit score $threshold detected..."
 	# In the case that <sweep end> = <sweep start>, meaning no sweep is needed, just a straight-forward jackhmmer with a specified threshold
 	outfile="jackhmmer_bs${threshold}_N${N}.out"
 	while true
 	do
 		echo "Running jackhmmer with a threshold of $threshold for $N iterations..."
+		echo "COMMAND: jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database"
+		jackhmmer -h | head -n 5
 		jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database
 		converged=$(grep -c 'CONVERGED' $outfile)
 		total=$(grep -c 'Query:' $outfile)
@@ -50,7 +91,7 @@ function run_jackhmmer() {
 			echo "At bit score threshold $threshold, not all queries converged. Increasing N to $N."
 		else
 			# Once converged, stop increasing iterations and break
-			break
+			return
 		fi
 	done
 }
@@ -99,7 +140,7 @@ then
 		fi
 	done
 
-	if [ "$end" -ne 0 ] && [ "$begin" -ne "$end" ]
+	if [[ "$end" -gt 0 || "$begin" -ne "$end" ]]
 	then
 		if [[ ! -e guide-proteins.txt ]]
 		then
@@ -133,7 +174,8 @@ then
 		seqtk subseq $database guide-proteins.txt > guide-proteins.faa
 		# See what threshold we lose these proteins - do a jackhmmer sweep where grep for guide-proteins at each threshold
 		echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
-		jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
+		jackhmmer -h | head -n 5
+		jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step 1 
 		sweep=$?
 		# If sweep > 0, then script executed with no problems
 		while [ "$sweep" -gt 0 ]
@@ -145,26 +187,29 @@ then
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
-			# If sweep = 2, the sweep start is too low
+			# If sweep = 2, the sweep start is too high
 			elif [ "$sweep" -eq 2 ]
 			then
 				end=$begin
-				if [ "$begin" -ne 1 ]
+				if [ "$begin" -ne 0 ]
 				then
 					begin=$((begin-difference))
 				fi
 				if [ "$begin" -le 0 ]
 				then
-					begin=1
+					begin=0
 				fi
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
-				if [ "$begin" -eq 1 ]
+
+				if [[ "$begin" -eq 0 && "$step" -eq 1 ]]
 				then
 					echo "<sweep start> cannot be lowered anymore. Your guide proteins are nowhere to be found." 1>&2
 					rm guide-proteins.txt
-					exit 1
+					rm jackhmmer_bs*_N*.out
+					zero=true
+					break
 				fi
 			# If sweep = 3, then the whole sweep finished with no problems -- need to increase the whole interval
 			elif [[ "$sweep" -eq 3 ]]
@@ -177,7 +222,7 @@ then
 					step=10
 				fi
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
-				jackhmmer-sweep.sh $AMP $lit $database $N $((begin+step)) $end $step
+				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
 			# If sweep > 2 (aka a threshold), then reduce the interval and find the threshold
 
@@ -196,29 +241,76 @@ then
 					break
 				fi
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
-				jackhmmer-sweep.sh $AMP $lit $database $N $((begin+step)) $((end-step)) $step
+				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
 			fi
 		done
-		threshold=$((sweep-1))
-		echo -e "\nBit score threshold $threshold is the optimal threshold to use when running jackhmmer!\n"
-		outfile="jackhmmer_bs${threshold}_N${N}.out"
-		# Delete all jackhmmer output files that are unnecessary
-		for file in jackhmmer_bs*_N*.out
-		do
-			if [ "$file" == "$outfile" ]
+		if [[ "$zero" = true ]]
+		then
+			run_jackhmmer $AMP $lit $database $N 0
+			outfile="jackhmmer_bs0_N${N}.out"
+		else
+			if [[ "$sweep" -eq 0 ]]
 			then
-				continue
+				run_jackhmmer $AMP $lit $database $N 0
+				run_jackhmmer $AMP $lit $database $N 1
+				run_jackhmmer $AMP $lit $database $N 2
+				run_jackhmmer $AMP $lit $database $N 3
+				for num in $(seq 0 3)
+				do
+					outfile="jackhmmer_bs${num}_N${N}.out"
+					for prot in $(cat guide-proteins.txt)
+					do
+						count=$(grep -c $prot $outfile)
+						if [[ "$count" -eq 0 ]]
+						then
+							if [[ "$num" -le 1 ]]
+							then
+								echo "There is no need to run jackhmmer with a threshold. The lowest threshold possible still excludes all your guide proteins."
+								mv jackhmmer_bs0_N${N}.out jackhmmer_N${N}.out
+								rm jackhmmer_bs*_N*.out
+								mv jackhmmer_N${N}.out jackhmmer_bs0_N${N}.out
+								outfile="jackhmmer_bs0_N${N}.out"
+							else
+								echo "Bit score ${num} loses guide protein ${prot} so the ideal threshold is $((num-1))!"
+								mv jackhmmer_bs$((num-1))_N${N}.out jackhmmer_N${N}.out
+								rm jackhmmer_bs*_N*.out
+								mv jackhmmer_N${N}.out jackhmmer_bs$((num-1))_N${N}.out
+								outfile="jackhmmer_bs$((num-1))_N${N}.out"
+							fi
+							finished=true
+							break
+						fi
+					done
+					if [[ "$finished" = true ]]
+					then
+						break
+					fi
+				done
+			else
+				threshold=$((sweep-1))
+				echo -e "\nBit score threshold $threshold is the optimal threshold to use when running jackhmmer!\n"
+				outfile="jackhmmer_bs${threshold}_N${N}.out"
+				# Delete all jackhmmer output files that are unnecessary
+				for file in jackhmmer_bs*_N*.out
+				do
+					if [ "$file" == "$outfile" ]
+					then
+						continue
+					fi
+					rm $file
+				done
 			fi
-			rm $file
-		done
+		fi
 	else
-		run_jackhmmer $AMP $lit $database $N $begin
 		outfile="jackhmmer_bs${begin}_N${N}.out"
+		echo "User input bit score $begin threshold detected!"
+		run_jackhmmer $AMP $lit $database $N $begin
 	fi
 else
-	run_jackhmmer $AMP $lit $database $N $begin
 	outfile="jackhmmer_bs${begin}_N${N}.out"
+	echo "Bit score $begin threshold detected!"
+	run_jackhmmer $AMP $lit $database $N $begin
 fi
 
 # Filter jackhmmer results for all hits (start with >>), and remove duplicates, then get their sequences using their names
@@ -232,16 +324,9 @@ then
 	then
 		echo "There were no jackhmmer hits."
 		echo "Status: Failure."
+		rm jackhmmer-hits.faa
 		exit 1
 	fi
 fi
 
-echo "Making BLAST database..."
-makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer
-
-echo -e "\nBLASTing..."
-blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48
-echo "Running seqtk..."
-seqtk subseq $database <(awk '{if ($3>90) print $2}' jackhmmer.blastp | sort -u) > jackhmmer-blast-hits.faa
-
-echo "Status: Success."
+jackhmmer-blast.sh $lit $databse $outfile
