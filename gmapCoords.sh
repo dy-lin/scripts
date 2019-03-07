@@ -36,11 +36,11 @@ do
 		gene_name=$(echo $gene | awk '{print $9}' | awk -F ";" '{print $1}' | sed 's/ID=//')
 
 		# If transcript began within the gene
-		if [[ "$transcript_begin" -ge "$gene_begin" && "$transcript_begin" -le "$gene_end" ]]
+		if [[ "$transcript_begin" -ge "$gene_begin" && "$transcript_begin" -lt "$gene_end" ]]
 		then
 			overlap=true
 		# If transcript ends within the gene
-		elif [[ "$transcript_end" -ge "$gene_begin" && "$transcript_end" -le "$gene_end" ]]
+		elif [[ "$transcript_end" -gt "$gene_begin" && "$transcript_end" -le "$gene_end" ]]
 		then
 			overlap=true
 		# If the transcript is within the gene entirely
