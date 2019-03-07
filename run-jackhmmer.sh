@@ -328,5 +328,4 @@ then
 		exit 1
 	fi
 fi
-
-jackhmmer-blast.sh $lit $databse $outfile
+jackhmmer-blast.sh $lit $database $outfile

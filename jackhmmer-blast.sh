@@ -1,14 +1,15 @@
 #!/bin/bash
 PROGRAM=$(basename $0)
-lit=$1
-database=$2
-outfile=$3
-
+set -eu -o pipefail
 if [[ "$#" -ne 3 ]]
 then
 	echo "USAGE: $PROGRAM <class of AMPs> <database> <output file>" 1>&2
 	exit 1
 fi
+
+lit=$1
+database=$2
+outfile=$3
 
 echo "Making BLAST database..."
 makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer
