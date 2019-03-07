@@ -5,7 +5,7 @@
 PROGRAM=$(basename $0)
 if [[ "$#" -eq 0 ]]
 then
-	echo "USAGE: $PROGRAM <GMAP-index path> <threads> <output prefix> <FASTA file> <splice>" 1>&2
+	echo "USAGE: $PROGRAM <GMAP-index path> <threads> <output prefix> <FASTA file> [splice]" 1>&2
 	exit 1
 fi
 db=$(dirname $1)
