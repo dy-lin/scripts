@@ -5,10 +5,12 @@ gethelp=false
 putN=0
 reverse=false
 remove=false
-while getopts :dhN:r opt
+circle=false
+while getopts :cdhN:r opt
 do
-	case $opt in 
-		d) remove=true;;
+	case $opt in
+		c) circle=true; remove=false;;
+		d) remove=true; circle=false;;
 		h) gethelp=true;;
 		N) putN=$OPTARG;;
 		r) reverse=true;;
@@ -23,7 +25,8 @@ if [[ "$#" -ne 2 || "$gethelp" = true ]]
 then
 	echo "USAGE: $PROGRAM <segment length> <FASTA file>" 1>&2
 	echo "DESCRIPTION: Takes sequence of specified length from the beginning of the sequence and stitches it onto the end of the sequence." 1>&2
-	echo -e "OPTIONS:\n\t-d\t\tdelete the segment\n\t-h\t\tShow help menu\n\t-N <INT>\tadd <INT> number of N's in the stitch\n\t-r\t\treverse (end sequence instead)" 1>&2
+	echo -e "OPTIONS:\n\t-c\t\tcircularize by taking <INT> bp from the end and stitching it to <INT> bp from the beginning\n\t-d\t\tdelete the segment\n\t-h\t\tShow help menu\n\t-N <INT>\tadd <INT> number of N's in the stitch\n\t-r\t\treverse (end sequence instead)" 1>&2
+	exit 1
 fi
 begin=1
 end=$1
@@ -35,6 +38,32 @@ processFASTA.sh $fasta
 length=$(seqtk comp $fasta | awk '{print $2}')
 name=$(basename $fasta ".fasta")
 name=$(basename $fasta ".fa")
+if [[ "$circle" = true ]]
+then
+	if [[ "$putN" -eq 0 ]]
+	then
+		echo "ERROR: In order to circularize a sequence, -N <INT> must be used." 1>&2
+		echo "USAGE: $PROGRAM <segment length> <FASTA file>" 1>&2
+		echo "DESCRIPTION: Takes sequence of specified length from the beginning of the sequence and stitches it onto the end of the sequence." 1>&2
+		echo -e "OPTIONS:\n\t-c\t\tcircularize by taking <segment length> bp from the end and stitching it to <segment length> bp from the beginning\n\t-d\t\tdelete the segment\n\t-h\t\tShow help menu\n\t-N <INT>\tadd <INT> number of N's in the stitch\n\t-r\t\treverse (end sequence instead)" 1>&2
+		exit 1
+	fi
+	if [[ "$reverse" = true ]]
+	then
+		echo "ERROR: -r does not apply when using -c." 1>&2
+		echo "UPDATE: Applying -c only." 1>&2
+		reverse=false
+	fi
+	echo "$(head -n1 $fasta) Stitch: $((length-end+1)):$length-----${putN}N-----$begin:$end" > ${name}.circular.fa
+	tail -n1 <(run-slice.sh $((length-end+1)) $fasta) | tr -d '\n' >> ${name}.circular.fa
+	for i in $(seq 1 $putN)
+	do
+		echo -n "N" >> ${name}.circular.fa
+	done
+	tail -n1 <(run-slice.sh $begin $end $fasta) >> ${name}.circular.fa
+	exit 0
+fi
+
 
 if [[ "$remove" = true ]]
 then
