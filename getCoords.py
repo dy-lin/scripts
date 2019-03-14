@@ -10,7 +10,7 @@ args = sys.argv[1:]
 
 if len(args) !=2:
 	print(f"USAGE: {sys.argv[0]} <partial sequence> <FASTA file>",file=sys.stderr)
-	print(f"DESCRIPTION: Takes a partial sequence string and aligns it to the given FASTA file, outputting the start and end coordinates of the stringsequence.", file=sys.stderr)
+	print(f"DESCRIPTION: Takes a partial sequence string and aligns it to the given FASTA file, outputting the start and end coordinates of the string sequence.", file=sys.stderr)
 	sys.exit(1)
 
 substring=args[0]
