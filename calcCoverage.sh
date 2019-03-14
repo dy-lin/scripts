@@ -126,3 +126,8 @@ else
 	echo "DESCRIPTION: Takes a sorted BAM file or a FASTA file with assembly reads and outputs the coverage." 1>&2
 	exit 1
 fi
+
+
+## Alternate methods
+## mosdepth -t48 test 20KvDraft1.sorted.bam
+## gunzip -c test.per-base.bed.gz | awk '{print $4}' | calculate.sh -m
