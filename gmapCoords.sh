@@ -1,19 +1,43 @@
 #!/bin/bash
 set -eu -o pipefail
 PROGRAM=$(basename $0)
+gethelp=false
+map2transcript=false
+aln=false
+while getopts :ahgt opt
+do
+	case $opt in
+		a) aln=true;;
+		h) gethelp=true;;
+		t) map2transcript=true;;
+		\?) echo "$PROGRAM: invalid option $opt" 1>&2; exit 1;;
+	esac
+done
+shift $((OPTIND-1))
 
-if [[ "$#" -eq 0 ]]
+
+if [[ "$#" -eq 0 || "$gethelp" = true ]]
 then
 	echo "USAGE: $PROGRAM <GMAP input FASTA file> <GMAP output GFF file> <GMAP index GFF file>" 1>&2 
 	echo "DESCRIPTION: Checks the GMAP alignments for overlaps." 1>&2
+	echo -e "OPTIONS:\n\t-a\tShow alignments to other scaffolds\n\t-h\tShow help menu\n\t-t\tMap to transcripts instead of scaffold" 1>&2
 	exit 1
 fi
 fasta=$1
 gmap_gff=$2
 gff=$3
-if [[ "$(awk '/\tgene\t/' $gff | wc -l)" -eq 0 ]]
+
+if [[ "$map2transcript" = true ]]
 then
-	processGFF.sh $gff
+	feature="\tmRNA\t"
+	echo "Aligning to transcripts..." 1>&2
+else
+	if [[ "$(awk '/\tgene\t/' $gff | wc -l)" -eq 0 ]]
+	then
+		processGFF.sh $gff
+	fi
+	feature="\tgene\t"
+	echo "Aligning to genes..." 1>&2
 fi
 echo "Writing significant alignments to transcript-alignments.tsv..." 1>&2
 echo -e "ORF\tCDS\tTranscript\tAlignment\tCoverage\tIdentity" > transcript-alignments.tsv
@@ -64,14 +88,17 @@ do
 		if [[ "$overlap" = true ]]
 		then
 			mapped=true
-			if [[ "$gene_scaffold" == "$transcript_scaffold" ]]
+			if [[ "$transcript_scaffold" =~ $gene_scaffold ]]
 			then
 				echo -e "$transcript_ORF\t$transcript_CDS\t$transcript_name\t$gene_name\t$transcript_cov\t$transcript_pid" >> transcript-alignments.tsv
 			else
-				echo -e "$transcript_ORF\t$transcript_CDS\t$transcript_name\t$gene_scaffold:$transcript_begin:$transcript_end\t$transcript_cov\t$transcript_pid" >> transcript-alignments.tsv
+				if [[ "$aln" = true ]]
+				then
+					echo -e "$transcript_ORF\t$transcript_CDS\t$transcript_name\t$gene_scaffold:$transcript_begin:$transcript_end\t$transcript_cov\t$transcript_pid" >> transcript-alignments.tsv
+				fi
 			fi
 		fi	
-	done < <(grep -v '^#' $gff | awk '/\tgene\t/')
+	done < <(grep -v '^#' $gff | awk -v var=$feature '$0 ~ var' )
 	if [[ "$mapped" = false ]]
 	then
 		echo -e "$transcript_ORF\t$transcript_CDS\t$transcript_name\tunmapped\t-\t-" >> transcript-alignments.tsv
