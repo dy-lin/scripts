@@ -80,7 +80,10 @@ function run_jackhmmer() {
 		echo "Running jackhmmer with a threshold of $threshold for $N iterations..."
 		echo "COMMAND: jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database"
 		jackhmmer -h | head -n 5
-		jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database
+		if [[ ! -e "$outfile" ]]
+		then
+			jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database
+		fi
 		converged=$(grep -c 'CONVERGED' $outfile)
 		total=$(grep -c 'Query:' $outfile)
 		# If not converged, increase iterations and delete the file
@@ -161,13 +164,11 @@ then
 					if [[ "$cutoff" -le 50 ]]
 					then
 						echo "There are no proteins that align significantly that can be used as your guide proteins. All proteins align with percent identity 50% or lower."
-						rm guide-proteins.txt
-						echo "Status: Failure."
-						exit 1
+						echo "Using all guide blast results as guide proteins."
 					else
 						echo "Guide proteins align with percent identity ${cutoff}% or higher."
-						break
 					fi
+						break
 				fi
 			done
 		fi

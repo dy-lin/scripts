@@ -55,7 +55,9 @@ do
 #				difference=$((end-begin))
 				if [[ "$((begin-difference))" -le 0 && "$begin" -ne 0 ]]
 				then
-					echo "Your <sweep start> value is too high...Lowering it to the lowest possible value: 0. Exit code: 2"
+					echo "Your <sweep start> value is too high...Lowering it to the lowest possible value: 0."
+					echo "Exit code: 2"
+					exit 2
 				else
 
 					# If first threshold tried loses proteins and the step is one, it means that the ideal threshold is i-1
@@ -75,10 +77,10 @@ do
 					if [ "$begin" -ne 0 ]
 					then
 						echo "Your <sweep start> value is too high...Lowering it to $((begin-difference))."
+						echo "Exit code: 2"
+						exit 2
 					fi
 				fi
-					echo "Exit code: 2"
-					exit 2
 			else
 				echo "Bit score threshold $i loses guide protein ${guide}..."
 			#	echo "...${guide} is not present when the threshold is ${threshold}." 

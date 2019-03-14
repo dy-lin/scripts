@@ -1,4 +1,17 @@
 #!/bin/bash
 
-rm guide-*
-rm jackhmmer_bs*
+for i in guide-*
+do
+	if [[ -e "$i" ]]
+	then
+		rm $i
+	fi
+done
+
+for i in jackhmmer_bs*
+do
+	if [[ -e "$i" ]]
+	then
+		rm $i
+	fi
+done
