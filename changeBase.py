@@ -28,7 +28,7 @@ oldbase=args[2].upper()
 newbase=args[3].upper()
 
 # List of acceptable bases
-bases=["A", "C", "G", "T"]
+bases=["A", "C", "G", "T", "U", "R", "Y", "S", "W", "K", "M", "B", "D", "H", "V", "N"]
 
 # Print error message if any of the arguments are invalid bases
 if (oldbase not in bases) or (newbase not in bases):
