@@ -11,13 +11,9 @@ threshold=$1
 dict=$2
 
 # Get all AMPs of a class
-amp=$(basename $(pwd))
-if [[ "$amp" == *s ]]
-then
-	class=${amp::-1}
-else
-	class=$amp
-fi
+# amp=$(basename $(pwd))
+amp="defensins"
+class=$(echo $amp | sed 's/s$//')
 outfile=${amp}_summary.jira
 tissues=$(ls -l | awk '/^d/ {print $9}' | sort -u)
 
@@ -104,19 +100,49 @@ echo "||tissue||\# transcripts||\# ORFs||jackhmmer hits||blast hits ($amp/$class
 for tissue in $tissues
 do
 #	echo $tissue >> $outfile
-	num_transcriptome=$(zgrep -c '^>' ../assemblies/${tissue})
-	num_ORFs=$(grep -c '^>' ${tissue}/${tissue}.ORFs.fa)
-	num_hits=$(grep -c '^>' ${tissue}/bs${threshold}/jackhmmer-hits.faa)
-	num_blast=$(grep -c '^>' ${tissue}/bs${threshold}/jackhmmer-blast-hits.faa)
+	assembly="../assemblies/${tissue}"
+	while [[ ! -e "$assembly" ]]
+	do
+		assembly="../$assembly"
+	done
+
+	if [[ "$(readlink -f $assembly)" == *.gz ]]
+	then
+		num_transcriptome=$(zgrep -c '^>' $assembly)
+	else
+		num_transcriptome=$(grep -c '^>' $assembly)
+	fi
+	ORFfile="${tissue}/${tissue}.ORFs.fa"
+
+	if [[ ! -e "$ORFfile" ]]
+	then
+		ORFfile="${ORFfile}a"
+	fi
+	num_ORFs=$(grep -c '^>' $ORFfile)
+
+	hitsfile="${tissue}/bs${threshold}/jackhmmer-hits.fa"
+	if [[ ! -e "$hitsfile" ]]
+	then
+		hitsfile="${hitsfile}a"
+	fi
+	num_hits=$(grep -c '^>' $hitsfile)
+
+	blasthitsfile="${tissue}/bs${threshold}/jackhmmer-blast-hits.fa"
+	if [[ ! -e "$blasthitsfile" ]]
+	then
+		blasthitsfile="${blasthitsfile}a"
+	fi
+	num_blast=$(grep -c '^>' $blasthitsfile) 
 	num_transcripts=$(ls ${tissue}/bs${threshold}/transcripts/*.fa | wc -l)
 	if [[ -e ${tissue}/bs${threshold}/jackhmmer-blast-hits.trimmed.faa ]]
 	then
 		num_amplike=$(grep -c "$class-like" ${tissue}/bs${threshold}/jackhmmer-blast-hits.trimmed.faa)
+		num_amp_partial=$(grep '^>' ${tissue}/bs${threshold}/jackhmmer-blast-hits.trimmed.faa | grep -v "$class-like" | grep -c 'partial')
 	else
 		num_amplike=0
+		num_amp_partial=$(grep '^>' $blasthitsfile | grep -v "$class-like" | grep -c 'partial')
 	fi
 	num_amp=$((num_blast-num_amplike))
-	num_amp_partial=$(grep '^>' ${tissue}/bs${threshold}/jackhmmer-blast-hits.trimmed.faa | grep -v "$class-like" | grep -c 'partial')
 	num_amp_complete=$((num_amp-num_amp_partial))
 	echo "|$tissue|$num_transcriptome|$num_ORFs|$num_hits|$num_blast|$num_transcripts|$num_amp|$num_amp_complete|$num_amp_partial|$num_amplike|$threshold|" >> $outfile
 done
