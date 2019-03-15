@@ -12,23 +12,30 @@ filename=$(basename $1)
 extension="${filename##*.}"
 filename=$(basename $1 $extension)
 
-
 # Run seqtk seq in case FASTA sequence is not all on one line (e.g. Downloaded from NCBI)
-seqtk seq $1 > ${filename}seqtk.fa
 
+if [[ "$(wc -l $1 | awk '{print $1}')" -ne 2 ]]
+then
+	fileout=${filename}seqtk.fa
+	seqtk seq $1 > $fileout
+else
+	fileout=$1
+fi
 # If a GFF file is given, findGaps.py will show which gene features contain gaps
 if [ "$#" -eq 2 ]
 then
-	findGaps.py ${filename}seqtk.fa $2
+	findGaps.py $fileout $2
 else
-	findGaps.py ${filename}seqtk.fa
+	findGaps.py $fileout
 fi
 
 # Print gap assessment to screen neatly
 if [ -e "${filename}.seqtk.gaps.tsv" ]
 then
-	column -t -s$'\t' ${filename}seqtk.gaps.tsv
+	column -t -s$'\t' ${filename}.gaps.tsv
 fi
 
-# Remove seqtk file as it is no loner needed
-rm ${filename}seqtk.fa
+if [[ -e ${filename}seqtk.fa ]]
+then
+	rm ${filename}seqtk.fa
+fi
