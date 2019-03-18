@@ -2,15 +2,34 @@
 PROGRAM=$(basename $0)
 if [[ "$#" -eq 0 ]]
 then
-	echo "USAGE: $PROGRAM <protein family> <FASTA file(s)>" 1>&2
+	echo "USAGE: $PROGRAM [protein family] <FASTA file(s)>" 1>&2
 	echo "DESCRIPTION: Takes FASTA file(s) and runs sequences against the Pfam database." 1>&2
 	exit 1
 fi
-prot=$(echo $1 | sed 's/s$//')
-shift
+
+if [[ ! -f "$1" ]]
+then
+	fam=true
+	prot=$(echo $1 | sed 's/s$//')
+	shift
+else
+	fam=false
+fi
+
 for fasta in "$@"
-do
+do	
+	if [[ ! -e "$fasta" ]]
+	then
+		echo "$(basename $fasta) does not exist." 1>&2
+		continue
+	fi
+	echo "Running Pfam on $(basename $fasta)..." 1>&2
 	filename=${fasta%.*}
 	hmmscan --notextw --noali --tblout ${filename}.tbl -o /dev/null /projects/btl/dlin/datasets/Pfam $fasta
-	seqtk subseq $fasta <(awk -v var="$prot" 'IGNORECASE = 1 {if($1==var) print $3}' ${filename}.tbl | sort -u ) > ${filename}.${prot}s.faa
+	echo "Pfam domains/families written to $(basename "${filename}.tbl")" 1>&2
+	if [[ "$fam" = true ]]
+	then
+		echo "Sequences with a Pfam $prot domain/family written to $(basename "${filename}.${prot}s.faa")" 1>&2
+		seqtk subseq $fasta <(awk -v var="$prot" 'IGNORECASE = 1 {if($1==var) print $3}' ${filename}.tbl | sort -u ) > ${filename}.${prot}s.faa
+	fi
 done
