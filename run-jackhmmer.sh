@@ -2,6 +2,7 @@
 # Using a non-zero exit status as a 'return value', so commenting out pipefail
 # set -eu -o pipefail
 PROGRAM=$(basename $0)
+echo "COMMAND: $PROGRAM $*" 1>&2
 if [[ "$#" -ne 6 && "$#" -ne 5 ]]
 then
 	if [[ "$#" -gt 0 ]]
@@ -100,7 +101,6 @@ function run_jackhmmer() {
 }
 
 # Guide Blast - directly blast known/literature defensins against the database to see which proteins we cannot lose - threshold 99% identity
-
 if [ "$end" -ne "$begin" ]
 then
 	difference=$((end-begin))

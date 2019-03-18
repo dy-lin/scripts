@@ -18,6 +18,7 @@ echo -e "\nBLASTing..."
 blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48
 echo "Running seqtk..."
 threshold=90
+aligned=$threshold
 while [[ ! -s jackhmmer-blast-hits.faa && "$threshold" -ge 50 ]]
 do
 	seqtk subseq $database <(awk -v var=$threshold '{if ($3>var) print $2}' jackhmmer.blastp | sort -u) > jackhmmer-blast-hits.faa
