@@ -49,14 +49,18 @@ fasta=list(inputFile[1].rstrip())
 outputFileName=""
 
 # Naming the output file to reflect positional base changes in the name
+
+## If it is a temporary file, name it according to the header
 if "/dev/fd/" in inputFileName:
 	outputFileName = directory + "/" + sequence + ".pos" + str(pos) + "." + oldbase + "to" + newbase + ".fa"
-elif "." in inputFileName:
+## If the basename has a period (i.e. a file extension)
+elif "." in inputFileName.split("/")[-1]:
 	filename=inputFileName.split(".")
 	extLen=len(filename[-1])+1
-	outputFileName = inputFileName[:-extLen] + ".pos" + str(pos) + "." + oldbase + "to" + newbase + ".fa"
+	outputFileName = directory + "/" + inputFileName[:-extLen] + ".pos" + str(pos) + "." + oldbase + "to" + newbase + ".fa"
+## If the basename has no file extension
 else:
-	outputFileName = inputFileName +  ".pos" + str(pos) + "." + oldbase + "to" + newbase + ".fa"
+	outputFileName = directory + "/" + inputFileName.split("/")[-1] +  ".pos" + str(pos) + "." + oldbase + "to" + newbase + ".fa"
 
 # Position 1 specified by user is index of 0
 index=pos-1
