@@ -29,7 +29,13 @@ do
 	echo "Pfam domains/families written to $(basename "${filename}.tbl")" 1>&2
 	if [[ "$fam" = true ]]
 	then
-		echo "Sequences with a Pfam $prot domain/family written to $(basename "${filename}.${prot}s.faa")" 1>&2
 		seqtk subseq $fasta <(awk -v var="$prot" 'IGNORECASE = 1 {if($1==var) print $3}' ${filename}.tbl | sort -u ) > ${filename}.${prot}s.faa
+		if [[ ! -s "${filename}.${prot}s.faa" ]]
+		then
+			echo "No sequences with a Pfam $prot domain/family found." 1>&2
+			rm ${filename}.${prot}s.faa
+		else
+			echo "Sequences with a Pfam $prot domain/family written to $(basename "${filename}.${prot}s.faa")" 1>&2
+		fi
 	fi
 done
