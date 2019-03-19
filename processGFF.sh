@@ -23,7 +23,13 @@ then
 fi
 
 present=false
-gff=$1
+
+if [[ -L $1 ]]
+then
+	gff=$(readlink -f $1)
+else
+	gff=$1
+fi
 IFS=$'\n'
 # in the case that genes are already in the file, and introns are selected-- nothing would happen, exit
 if [[ "$(awk '/\tintron\t/' $gff | wc -l)" -gt 0 ]]
