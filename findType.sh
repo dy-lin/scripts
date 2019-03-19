@@ -12,7 +12,7 @@ do
 	seq=$(awk '!/^>/' $fasta | tr -d '\n')
 	res=$(residue.py "$seq")
 	case $res in
-		prot) filename=${fasta%.*};mv $fasta ${filename}.faa;echo "$res";;
+		prot) filename=${fasta%.*};if [[ "$fasta" != *.faa  ]]; then mv $fasta ${filename}.faa;fi;echo "$res";;
 		nucl) echo "$res";;
 		invalid) echo "$res"; echo "Invalid residue present." 1>&2;;
 		ambiguous) echo "$res"; echo "Ambiguous base present." 1>&2 ;;
