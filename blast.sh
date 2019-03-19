@@ -1,10 +1,11 @@
 #!/bin/bash
 PROGRAM=$(basename $0)
 
-if [[ "$#" -eq 3 ]]
+if [[ "$#" -ne 3 ]]
 then
 	echo "USAGE: $PROGRAM <nucl or prot> <query> <subject>" 1>&2
 	echo "DESCRIPTION: Blasts the query file against the subject file." 1>&2
+	exit 1
 fi
 
 dbtype=$1
