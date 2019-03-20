@@ -21,4 +21,3 @@ cd ..
 mkdir -p gmap-genome
 run-gmap.sh GMAP-index 48 $prefix $mRNA
 
-# Run gmap-coords and then jira summary
