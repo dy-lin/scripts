@@ -225,12 +225,18 @@ then
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
+				echo "Sweep: $sweep" 1>&2
 			# If sweep > 2 (aka a threshold), then reduce the interval and find the threshold
 
 			elif [ "$sweep" -gt 3 ]
 			then
+				echo "Original end: $end" 1>&2
 				end=$sweep
+				echo "New end: $end" 1>&2
+				echo "Original begin: $begin"1>&2
 				begin=$((end-step))
+				echo "New begin: $begin" 1>&2
+				echo "Original step: $step" 1>&2
 				if [ "$step" -eq 100 ]
 				then
 					step=10
@@ -241,6 +247,7 @@ then
 				then
 					break
 				fi
+				echo "New step: $step" 1>&2
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..."
 				jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step
 				sweep=$?
