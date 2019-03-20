@@ -30,9 +30,9 @@ then
 	ln -fs /projects/spruceup_scratch/interior_spruce/PG29/annotation/genome-annotation/PG29v5/Maker/ThirdIterationCumulatNonntEdit/OutputMaker/LoweAED/PG29.all.polished.genesLoweAED_polish.gff  ${dir}/genes.gff
 elif [[ "$spruce" == "Q903" ]]
 then
-	ln -fs /projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/ThirdStepCumulat/OutputMaker/LoweAED/Q903.all.maker.proteinsLoweAED.fasta ${dir}/proteins.faa
+	ln -fs /projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/ThirdStepCumulat/OutputMaker/LoweAED/Q903.all.maker.proteinsExtrcatTrans.fasta ${dir}/proteins.faa
 	ln -fs /projects/spruceup/psitchensis/Q903/assembly/releases/v0.1beta/Q903_v0.1beta_1000plus.fa ${dir}/scaffolds.fa
-	ln -fs /projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/ThirdStepCumulat/OutputMaker/LoweAED/Q903.all.maker.transcriptsLoweAED.fasta ${dir}/transcripts.fa
+	ln -fs /projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/ThirdStepCumulat/OutputMaker/LoweAED/Q903.all.maker.transcriptsExtrcatTrans.fasta ${dir}/transcripts.fa
 	ln -fs /projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/ThirdStepCumulat/OutputMaker/LoweAED/Q903.all.polishedGenesLoweAED.gff ${dir}/genes.gff
 	ln -fs /projects/spruceup_scratch/psitchensis/Q903/annotation/amp/sequences/uniprot-ncbi-filtered-labeled-nonSubsumed-9April2018.fa ${dir}/literature-AMPs.faa
 else
