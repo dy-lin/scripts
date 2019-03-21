@@ -2,7 +2,7 @@
 spruce=$1
 if [[ "$#" -ne 1 && "$#" -ne 2 ]]
 then
-	echo "USAGE: $(basename $0) <spruce genotype" 1>&2
+	echo "USAGE: $(basename $0) <spruce genotype> [specified directory] " 1>&2
 	echo "DESCRIPTION: Creates softlinks for all spruce files in the specified directories." 1>&2
 	exit 1
 fi
@@ -11,7 +11,7 @@ if [[ -z $2 ]]
 then
 	dir=$(pwd)
 else
-	dir=$2
+	dir=$(echo $2 | sed 's/\/$//')
 fi
 
 if [[ "$spruce" == "WS77111" ]]
