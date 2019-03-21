@@ -36,6 +36,15 @@ do
 			rm ${filename}.${prot}s.faa
 		else
 			echo "Sequences with a Pfam $prot domain/family written to $(basename "${filename}.${prot}s.faa")" 1>&2
+			old=$(grep -c '^>' $fasta)
+			new=$(grep -c '^>' ${filename}.${prot}s.faa)
+			diff=$((old-new))
+			if [[ "$diff" -ne 0 ]]
+			then
+				echo "Of the $old input sequences, $diff do NOT have a $prot domain/family." 1>&2
+			else
+				echo "All input sequences have a $prot domain/family." 1>&2
+			fi
 		fi
 	fi
 done
