@@ -1,9 +1,21 @@
 #!/bin/bash
 PROGRAM=$(basename $0)
 set -eu -o pipefail
-if [[ "$#" -ne 3 ]]
+gethelp=false
+verbse=false
+while getopts :hv opt
+do
+	case in $opt
+		h) gethelp=true;;
+		v) verbose=true;;
+		\?) echo "ERROR: $PROGRAM: Invalid option $opt" 1>&2 ; exit 1;;
+	esac
+done
+shift $((OPTIND-1))
+if [[ "$#" -ne 3  ]]
 then
 	echo "USAGE: $PROGRAM <class of AMPs> <database> <output file>" 1>&2
+	echo -e "OPTIONS:\n\t-h\tShow help menu\n\t-v\tverbose logging" 1>&2
 	exit 1
 fi
 
@@ -12,9 +24,18 @@ database=$2
 outfile=$3
 
 echo "Making BLAST database..."
+if [[ "$verbose" = true ]]
+then
+	echo "COMMAND:  makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer" 1>&2
+fi
 makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer
 
 echo -e "\nBLASTing..."
+if [[ "$verbose" = true ]]
+then
+	echo "COMMAND: blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48" 1>&2
+fi
+
 blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48
 echo "Running seqtk..."
 threshold=90

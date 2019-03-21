@@ -24,7 +24,10 @@ do
 	then
 		if [ ! -e "jackhmmer_bs${i}_N${N}.out" ]
 		then
-			echo "COMMAND: jackhmmer --noali -T $i -N $N -o $outfile $AMP $database"
+			if [[ "$verbose" = true ]]
+			then
+				echo "COMMAND: jackhmmer --noali -T $i -N $N -o $outfile $AMP $database" 1>&2
+			fi
 			jackhmmer --noali -T $i -N $N -o $outfile $AMP $database
 		fi
 	else
@@ -36,10 +39,10 @@ do
 	total=$(grep -c 'Query:' $outfile)
 	if [ "$converged" -ne "$total" ]
 	then
-		echo "At bit score threshold $i, not all queries have converged. Increasing N to $((N+5))."
+		echo "At bit score threshold $i, not all queries have converged. Increasing N to $((N+5))." 1>&2
 		rm $outfile
-		echo "Exit code: 1"
-		exit 1
+		echo "nc"
+		exit 0
 	fi
 	threshold=$i
 #	threshold=$(echo $outfile | awk -F "_" '{print $2}' | awk -F "s" '{print $2}')
@@ -55,45 +58,45 @@ do
 #				difference=$((end-begin))
 				if [[ "$((begin-difference))" -le 0 && "$begin" -ne 0 ]]
 				then
-					echo "Your <sweep start> value is too high...Lowering it to the lowest possible value: 0."
-					echo "Exit code: 2"
-					exit 2
+					if [[ "$difference" -gt 2 ]]
+					then
+						echo "Your <sweep start> value is too high...Lowering it to $((difference/2))." 1>&2
+						echo "high"
+						exit 0
+					else
+						echo "Your <sweep start> value is too high...Lowering it to the lowest possible value: 0." 1>&2
+						echo "high"
+						exit 0
+					fi
 				else
 
 					# If first threshold tried loses proteins and the step is one, it means that the ideal threshold is i-1
 					if [ "$step" -eq 1 ]
 					then
-						if [[ "$threshold" -ge 1 && "$threshold" -le 3 ]]
-						then
-							echo "Threshold is between 1 and 3."
-							echo "Exit code: 0"
-							exit 0
-						else
-							echo "The first threshold in the sweep loses guide protein ${guide}..."
-							echo "Exit code: $threshold"
-							exit $threshold
-						fi
+						echo "The first threshold in the sweep loses guide protein ${guide}..." 1>&2
+						echo "$threshold"
+						exit 0
 					fi
-					if [ "$begin" -ne 0 ]
+					if [ "$begin" -ne 1 ]
 					then
-						echo "Your <sweep start> value is too high...Lowering it to $((begin-difference))."
-						echo "Exit code: 2"
-						exit 2
+						echo "Your <sweep start> value is too high...Lowering it to $((begin-difference))." 1>&2
+						echo "high"
+						exit 0
 					fi
 				fi
 			else
-				echo "Bit score threshold $i loses guide protein ${guide}..."
+				echo "Bit score threshold $i loses guide protein ${guide}..." 1>&2
 			#	echo "...${guide} is not present when the threshold is ${threshold}." 
 				if [ "$step" -ne 1 ]
 				then
-					echo "Therefore, the ideal threshold will be between $((threshold-step)) and $threshold!"
+					echo "Therefore, the ideal threshold will be between $((threshold-step)) and $threshold!" 1>&2
 				fi
-				echo "Exit code: $threshold"
-				exit $threshold
+				echo "$threshold"
+				exit 0
 			fi
 		fi
 	done
-	echo "Bit score threshold ${threshold} contains all guide proteins..."
+	echo "Bit score threshold ${threshold} contains all guide proteins..." 1>&2
 done
-echo "Exit code: 3"
-exit 3
+echo "np"
+exit 0
