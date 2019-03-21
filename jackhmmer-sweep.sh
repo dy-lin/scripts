@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -eu -o pipefail
 AMP=$1
 lit=$2
 database=$3
