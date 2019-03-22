@@ -7,7 +7,7 @@ transcripts=false
 gff=false
 if [[ "$#" -eq 0 ]]
 then
-	echo "USAGE: $PROGRAM -s <SCAFFOLD FASTA> -t <TRANSCRIPT FASTA> -g <GFF file>" 1>&2 
+	echo "USAGE: $PROGRAM -s <SCAFFOLD FASTA> -t <TRANSCRIPT FASTA> -g <GFF file> [JACKHMMER BLAST FILE]" 1>&2 
 	echo "DESCRIPTION: Fetches necessary files for IGV." 1>&2
 	exit 1
 fi
@@ -27,9 +27,16 @@ shift $((OPTIND-1))
 # Write help/error messages here
 if [[ "$gethelp" = true ]]
 then
-	echo "USAGE: $PROGRAM -s <SCAFFOLD FASTA> -t <TRANSCRIPT FASTA> -g <GFF file>" 1>&2 
+	echo "USAGE: $PROGRAM -s <SCAFFOLD FASTA> -t <TRANSCRIPT FASTA> -g <GFF file> [JACKHMMER BLAST FILE]" 1>&2 
 	echo "DESCRIPTION: Fetches necessary files for IGV." 1>&2
 	exit 1
+fi
+
+if [[ "$#" -eq 1 ]]
+then
+	infile=$1
+else
+	infile="jackhmmer-blast-hits.faa"
 fi
 # if scaffolds, gffs and transcripts are given-- typical case or proteome jackhmmer spruce
 if [[ "$scaffolds" != false && "$transcripts" != false && "$gff" != false  ]]
@@ -57,7 +64,7 @@ then
 		mkdir igv
 	fi
 
-	for i in $(awk '/^>/' jackhmmer-blast-hits.faa | awk -F ">" ' {print $2}' | awk '{print $1}')
+	for i in $(awk '/^>/' $infile | awk -F ">" ' {print $2}' | awk '{print $1}')
 	do
 		# Get scaffold name
 		temp=${i#*-}
@@ -118,7 +125,7 @@ then
 	mkdir -p transcripts
 	mkdir -p gffs
 	mkdir -p igv
-	for i in $(awk '/^>/' jackhmmer-blast-hits.faa | awk -F ">" '{print $2}' | awk '{print $1}')
+	for i in $(awk '/^>/' $infile | awk -F ">" '{print $2}' | awk '{print $1}')
 	do
 		# Get transcript name
 		transcript_name=$(echo $i | awk '{print $1}' | awk -F "_" '{print $2}' | awk -F ":" '{print $1}')
@@ -204,7 +211,7 @@ then
 	# necessary GFF headers are in line 1 and 7 of NCBI GFFs
 	awk 'NR==1 || NR==7' $gff > amp.gff
 	# NCBI data is named differently
-	for i in $(awk '/^>/' jackhmmer-blast-hits.faa | awk -F ">" '{print $2}' | awk '{print $1}')
+	for i in $(awk '/^>/' $infile | awk -F ">" '{print $2}' | awk '{print $1}')
 	do
 		# No need to fetch scaffolds when genome is assembled into one scaffold
 		# Fetch transcripts
