@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu -o pipefail
+# set -eu -o pipefail
 AMP=$1
 lit=$2
 database=$3
@@ -20,7 +20,7 @@ do
 	# If N-5 exists, it means the jackhmmer for that iteration already converged
 	# So there is no need to run jackhmmer at that threshold again at a higher itereration
 	# If N-5 does not exist, either jackhmmer has never been run for that threshold yet, or it had not converged previously.
-	if [ ! -e "jackhmmer_bs${i}_N$((N-5)).out" ]
+	if [[ "$(ls jackhmmer_bs${i}_N*.out 2> /dev/null | wc -l)" -eq 0 ]]
 	then
 		if [ ! -e "jackhmmer_bs${i}_N${N}.out" ]
 		then
@@ -31,8 +31,10 @@ do
 			jackhmmer --noali -T $i -N $N -o $outfile $AMP $database
 		fi
 	else
-		echo "Bit score thresold $i contains all guide proteins..."
-		continue
+		# Pick the largest converged iteration.
+		current=$(ls jackhmmer_bs${i}_N*.out | awk -F "_N" '{print $2}' | sed 's/.out$//' | sort -g -r | head -n1)
+		outfile="jackhmmer_bs${i}_N${current}.out"
+		echo "At bit score $i, all queries have previously converged in $current iterations, so there is no need to run jackhmmer for $N iterations." 1>&2
 	fi
 	# If unconverged, delete the file -- all files that have not been deleted will have been converged/proteins found
 	converged=$(grep -c 'CONVERGED' $outfile)
@@ -49,15 +51,18 @@ do
 	for guide in $(cat guide-proteins.txt)
 	do
 		count=$(grep -c $guide $outfile)
+#		echo "Count: $count" 1>&2
 		# If count is 0, guide protein has been lost, exit script
 		if [ "$count" -eq 0 ]
 		then
 			# If count is 0 AND on the first threshold tried, the threshold is too high and needs to be lowered
 			if [ "$threshold" -eq "$begin" ]
 			then
+#				echo "First threshold tried loses protein!" 1>&2
 #				difference=$((end-begin))
 				if [[ "$((begin-difference))" -le 0 && "$begin" -ne 0 ]]
 				then
+#					echo "begin-difference is less than or equal to zero and begin is not 0" 1>&2
 					if [[ "$difference" -gt 2 ]]
 					then
 						echo "Your <sweep start> value is too high...Lowering it to $((difference/2))." 1>&2

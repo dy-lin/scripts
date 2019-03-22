@@ -1,8 +1,8 @@
 #!/bin/bash
-set -eu -o pipefail
+# set -eu -o pipefail
 PROGRAM=$(basename $0)
 gethelp=false
-verbose=false
+export verbose=false
 
 while getopts :hv opt
 do
@@ -12,6 +12,7 @@ do
 		\?) echo "ERROR: $PROGRAM: Invalid option: $opt" 1>&2 ; exit 1;;
 	esac
 done
+command="COMMAND: $PROGRAM $*"
 shift $((OPTIND-1))
 
 if [[ "$#" -ne 6 && "$#" -ne 5 ]] || [[ "$gethelp" = true ]]
@@ -28,7 +29,7 @@ then
 fi
 if [[ "$verbose" = true ]]
 then
-	echo "COMMAND: $PROGRAM $*" 1>&2
+	echo -e "\t$command" 1>&2
 fi
 
 AMP=$1
@@ -97,8 +98,11 @@ function run_jackhmmer() {
 		echo "Running jackhmmer with a threshold of $threshold for $N iterations..." 1>&2
 		if [[ "$verbose" = true ]]
 		then
-			echo "COMMAND: jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database" 1>&2
-			jackhmmer -h | head -n 5
+			echo -e "\tCOMMAND: jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database" 1>&2
+			while read line
+			do
+				echo -e "\t$line" 1>&2
+			done < <(jackhmmer -h | head -n 5)
 		fi
 		if [[ ! -e "$outfile" ]]
 		then
@@ -173,13 +177,13 @@ then
 			echo "Making BLAST database..." 1>&2
 			if [[ "$verbose" = true ]]
 			then
-				echo "COMMAND: makeblastdb -dbtype prot -in $database -out guide-blast" 1>&2
+				echo -e "\tCOMMAND: makeblastdb -dbtype prot -in $database -out guide-blast" 1>&2
 			fi
 			makeblastdb -dbtype prot -in $database -out guide-blast
 			echo -e "\nBLASTing..." 1>&2
 			if [[ "$verbose" = true ]]
 			then
-				echo "COMMAND: blastp -db guide-blast -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48" 1>&2
+				echo -e "\tCOMMAND: blastp -db guide-blast -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48" 1>&2
 			fi
 			blastp -db guide-blast -query $lit -out guide-blast.blastp -outfmt '6 std qcovs' -num_threads 48
 			# Filter blastp results for 99% identity sequences
@@ -208,8 +212,11 @@ then
 		echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 		if [[ "$verbose" = true ]]
 		then
-			jackhmmer -h | head -n 5
-			echo "COMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
+			while read line
+			do
+				echo -e "\t$line" 1>&2
+			done < <(jackhmmer -h | head -n 5)
+			echo -e "\tCOMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
 		fi
 		sweep=$(jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step)
 		# If sweep > 0, then script executed with no problems
@@ -222,7 +229,7 @@ then
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				if [[ "$verbose" = true ]]
 				then
-					echo "COMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
+					echo -e "\tCOMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
 				fi
 				sweep=$(jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step)
 			# If sweep = 2, the sweep start is too high
@@ -233,6 +240,20 @@ then
 				then
 					begin=$((difference/2))
 					difference=$((end-begin))
+					if [[ "$((difference%step))" -ne 0 ]]
+					then
+						if [[ "$step" -eq 100 ]]
+						then
+							step=10
+						elif [[ "$step" -eq 10 ]]
+						then
+							step=5
+						elif [[ "$step" -eq 5 ]]
+						then
+							step=1
+						fi
+					fi
+
 				elif [ "$begin" -le 1 ]
 				then
 					begin=0
@@ -242,7 +263,7 @@ then
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				if [[ "$verbose" = true ]]
 				then
-					echo "COMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
+					echo -e "\tCOMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
 				fi
 				sweep=$(jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step)
 				if [[ "$begin" -eq 0 && "$step" -eq 1 ]]
@@ -260,12 +281,15 @@ then
 				end=$((begin + interval))
 				if [ "$step" -eq 1 ]
 				then
+					step=5
+				elif [ "$step" -eq 5 ]
+				then
 					step=10
 				fi
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				if [[ "$verbose" = true ]]
 				then
-					echo "COMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
+					echo -e "\tCOMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
 				fi
 				sweep=$(jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step)
 			else
@@ -276,6 +300,9 @@ then
 					step=10
 				elif [ "$step" -eq 10 ]
 				then
+					step=5
+				elif [ "$step" -eq 5 ]
+				then
 					step=1
 				elif [ "$step" -eq 1 ]
 				then
@@ -284,7 +311,7 @@ then
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				if [[ "$verbose" = true ]]
 				then
-					echo "COMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
+					echo -e "\tCOMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
 				fi
 				sweep=$(jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step)
 			fi
@@ -332,4 +359,9 @@ then
 		exit 1
 	fi
 fi
-jackhmmer-blast.sh $lit $database $outfile
+if [[ "$verbose" = false ]]
+then
+	jackhmmer-blast.sh $lit $database $outfile
+else
+	jackhmmer-blast.sh -v $lit $database $outfile
+fi

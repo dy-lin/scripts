@@ -2,7 +2,7 @@
 PROGRAM=$(basename $0)
 set -eu -o pipefail
 gethelp=false
-verbse=false
+verbose=false
 while getopts :hv opt
 do
 	case in $opt
@@ -11,6 +11,7 @@ do
 		\?) echo "ERROR: $PROGRAM: Invalid option $opt" 1>&2 ; exit 1;;
 	esac
 done
+command="COMMAND: $PROGRAM $*"
 shift $((OPTIND-1))
 if [[ "$#" -ne 3  ]]
 then
@@ -22,8 +23,11 @@ fi
 lit=$1
 database=$2
 outfile=$3
-
-echo "Making BLAST database..."
+if [[ "$verbose" = true ]]
+then
+	echo "$command" 1>&2
+fi
+echo "Making BLAST database..." 1>&2
 if [[ "$verbose" = true ]]
 then
 	echo "COMMAND:  makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer" 1>&2
