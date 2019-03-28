@@ -6,7 +6,7 @@ then
 	echo "DESCRIPTION: Reads jackhmmer-blast-hits.faa and labels each sequence according to user." 1>&2
 	exit 1
 fi
-amp=$1
+amp=$(echo "$1" | sed 's/s$//')
 length=$2
 
 seqtk subseq jackhmmer-blast-hits.faa <(awk -v var=$length '{if($2==var) print $1}' <(seqtk comp jackhmmer-blast-hits.faa)) > jackhmmer-blast-hits.trimmed.faa
@@ -20,29 +20,44 @@ do
 	do
 		echo -e "\ttrb\ttrim before\n\ttra\ttrim after\n\ttrba\ttrim before and after\n\tp\tpartial\n\tl\t$amp-like\n\ttrbp\ttrim before and partial\n\ttrap\ttrim after and partial\n\tnp\tnon-partial\n\tap\talready partial\n\tnptra\tnon-partial, trimmed after\n\tnptrb\tnon-partial, trimmed before" 1>&2
 		echo -n "Answer: " 1>&2
-		read answer
+		read answer option1 option2
 	
 		if [[ "$answer" == "trb" ]]
 		then
-			echo -n "Trim BEFORE this pattern: " 1>&2
-			read pattern
+			if [[ -z "$option1" ]]
+			then
+				echo -n "Trim BEFORE this pattern: " 1>&2
+				read pattern
+			else
+				pattern=$option1
+			fi
 			echo "$id, trimmed" >> jackhmmer-blast-hits.trimmed.faa
 			echo $seq | sed "s/^.\+$pattern/$pattern/" >> jackhmmer-blast-hits.trimmed.faa
 			break
 		elif [[ "$answer" == "tra" ]]
 		then
-			echo -n "Trim AFTER this pattern: " 1>&2
-			read pattern
+			if [[ -z "$option1" ]]
+			then
+				echo -n "Trim AFTER this pattern: " 1>&2
+				read pattern
+			else
+				pattern=$option1
+			fi
 			echo "$id, trimmed end" >> jackhmmer-blast-hits.trimmed.faa
 			echo $seq | sed "s/${pattern}.\+$/$pattern/" >> jackhmmer-blast-hits.trimmed.faa
 			break
 		elif [[ "$answer" == "trba" ]]
 		then
-			echo -n "Trim BEFORE this pattern: " 1>&2
-			read pattern
-			echo -n "Trim AFTER this pattern: " 1>&2
-			read pattern2
-
+			if [[ ! -z "$option1" && ! -z "$option2" ]]
+			then
+				pattern=$option1
+				pattern2=$option2
+			else
+				echo -n "Trim BEFORE this pattern: " 1>&2
+				read pattern
+				echo -n "Trim AFTER this pattern: " 1>&2
+				read pattern2
+			fi
 			echo "$id, trimmed, trimmed end" >> jackhmmer-blast-hits.trimmed.faa
 			echo $seq | sed "s/^.\+$pattern/$pattern/" | sed "s/${pattern2}.\+$/${pattern2}/" >> jackhmmer-blast-hits.trimmed.faa
 			break
@@ -65,8 +80,13 @@ do
 			break
 		elif [[ "$answer" == "trap" ]]
 		then
-			echo -n "Trim AFTER this pattern: " 1>&2
-			read pattern
+			if [[ -z "$option1" ]]
+			then
+				echo -n "Trim AFTER this pattern: " 1>&2
+				read pattern
+			else
+				pattern=$option1
+			fi
 			echo "$id, trimmed end, partial" >> jackhmmer-blast-hits.trimmed.faa
 			echo $seq | sed "s/${pattern}.\+$/$pattern/" >> jackhmmer-blast-hits.trimmed.faa
 			break
@@ -82,15 +102,25 @@ do
 			break
 		elif [[ "$answer" == "nptrb" ]]
 		then
-			echo -n "Trim BEFORE this pattern: " 1>&2
-			read pattern
+			if [[ -z "$option1" ]]
+			then
+				echo -n "Trim BEFORE this pattern: " 1>&2
+				read pattern
+			else
+				pattern=$option1
+			fi
 			echo $id | sed 's/, partial//' | sed 's/$/, trimmed/' >> jackhmmer-blast-hits.trimmed.faa
 			echo $seq | sed "s/^.\+$pattern/$pattern/" >> jackhmmer-blast-hits.trimmed.faa
 			break
 		elif [[ "$answer" == "nptra" ]]
 		then
-			echo -n "Trim AFTER this pattern: " 1>&2
-			read pattern
+			if [[ -z "$option1" ]]
+			then
+				echo -n "Trim AFTER this pattern: " 1>&2
+				read pattern
+			else
+				pattern=$option1
+			fi
 			echo $id | sed 's/, partial//' | sed 's/$/, trimmed end/'  >> jackhmmer-blast-hits.trimmed.faa
 			echo $seq | sed "s/${pattern}.\+$/$pattern/" >> jackhmmer-blast-hits.trimmed.faa
 			break	
@@ -101,6 +131,8 @@ do
 	done
 done 3< <(seqtk subseq jackhmmer-blast-hits.faa <(awk -v var=$length '{if($2 != var) print $1}' <(seqtk comp jackhmmer-blast-hits.faa)))
 
-echo $(wc -l jackhmmer-blast-hits.faa)
-echo $(wc -l jackhmmer-blast-hits.trimmed.faa)
+begin=$(grep -c '^>' jackhmmer-blast-hits.faa)
+end=$(grep -c '^>' jackhmmer-blast-hits.trimmed.faa)
+
+echo "Processed $end/$begin sequences." 1>&2
 
