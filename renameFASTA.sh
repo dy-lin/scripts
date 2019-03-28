@@ -35,6 +35,12 @@ else
 		k=$(echo $prefix_old | awk -F "-" '{print $1}')
 		kc=$(echo $prefix_old | awk -F "-" '{print $2}')
 		read_pairs=$(echo $prefix_old |awk -F "-" '{print $3}')
+
+		if [[ -z "$k" || -z "$kc" || -z "$read_pairs" ]]
+		then
+			echo "File is not in XXM-kcX-kX.fa format." 1>&2
+			exit 1
+		fi
 		prefix="$read_pairs-$kc-$k"
 		sed "s/^>/>$prefix-/" $fasta > ${filename}.prefix.fa
 	done
