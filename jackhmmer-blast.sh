@@ -5,7 +5,7 @@ gethelp=false
 verbose=false
 while getopts :hv opt
 do
-	case in $opt
+	case $opt in
 		h) gethelp=true;;
 		v) verbose=true;;
 		\?) echo "ERROR: $PROGRAM: Invalid option $opt" 1>&2 ; exit 1;;
@@ -25,19 +25,19 @@ database=$2
 outfile=$3
 if [[ "$verbose" = true ]]
 then
-	echo "$command" 1>&2
+	echo -e"\t$command" 1>&2
 fi
 echo "Making BLAST database..." 1>&2
 if [[ "$verbose" = true ]]
 then
-	echo "COMMAND:  makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer" 1>&2
+	echo -e "\tCOMMAND:  makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer" 1>&2
 fi
 makeblastdb -dbtype prot -in jackhmmer-hits.faa -out jackhmmer
 
 echo -e "\nBLASTing..."
 if [[ "$verbose" = true ]]
 then
-	echo "COMMAND: blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48" 1>&2
+	echo -e "\tCOMMAND: blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48" 1>&2
 fi
 
 blastp -db jackhmmer -query $lit -out jackhmmer.blastp -outfmt '6 std qcovs' -num_threads 48

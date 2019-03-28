@@ -327,10 +327,13 @@ then
 		# Delete all jackhmmer output files that are unnecessary
 		for file in jackhmmer_bs*_N*.out
 		do
+	#		echo "Current file: $file" 1>&2
+	#		echo "Outfile: $outfile" 1>&2
 			if [ "$file" == "$outfile" ]
 			then
 				continue
 			fi
+			echo "Deleting ${file}..." 1>&2
 			rm $file
 		done
 	else

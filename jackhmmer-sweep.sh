@@ -26,15 +26,15 @@ do
 		then
 			if [[ "$verbose" = true ]]
 			then
-				echo "COMMAND: jackhmmer --noali -T $i -N $N -o $outfile $AMP $database" 1>&2
+				echo -e "\tCOMMAND: jackhmmer --noali -T $i -N $N -o $outfile $AMP $database" 1>&2
 			fi
 			jackhmmer --noali -T $i -N $N -o $outfile $AMP $database
 		fi
 	else
 		# Pick the largest converged iteration.
 		current=$(ls jackhmmer_bs${i}_N*.out | awk -F "_N" '{print $2}' | sed 's/.out$//' | sort -g -r | head -n1)
-		outfile="jackhmmer_bs${i}_N${current}.out"
-		echo "At bit score $i, all queries have previously converged in $current iterations, so there is no need to run jackhmmer for $N iterations." 1>&2
+		echo "At bit score $i, all queries have previously converged in $current iterations. Renaming the file to match current N value." 1>&2
+		mv jackhmmer_bs${i}_N${current}.out $outfile
 	fi
 	# If unconverged, delete the file -- all files that have not been deleted will have been converged/proteins found
 	converged=$(grep -c 'CONVERGED' $outfile)
