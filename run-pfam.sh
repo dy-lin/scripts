@@ -25,11 +25,15 @@ do
 	fi
 	echo "Running Pfam on $(basename $fasta)..." 1>&2
 	filename=${fasta%.*}
-	hmmscan --notextw --noali --tblout ${filename}.tbl -o /dev/null /projects/btl/dlin/datasets/Pfam $fasta
+	if [[ ! -e ${filename}.tbl ]]
+	then
+		hmmscan --notextw --noali --tblout ${filename}.tbl -o /dev/null /projects/btl/dlin/datasets/Pfam $fasta
+	fi
+
 	echo "Pfam domains/families written to $(basename "${filename}.tbl")" 1>&2
 	if [[ "$fam" = true ]]
 	then
-		seqtk subseq $fasta <(awk -v var="$prot" 'IGNORECASE = 1 {if($1==var) print $3}' ${filename}.tbl | sort -u ) > ${filename}.${prot}s.faa
+		seqtk subseq $fasta <(awk -v var="$prot" 'IGNORECASE = 1 {if($0~var) print $3}' ${filename}.tbl | sort -u ) > ${filename}.${prot}s.faa
 		if [[ ! -s "${filename}.${prot}s.faa" ]]
 		then
 			echo "No sequences with a Pfam $prot domain/family found." 1>&2
@@ -41,7 +45,12 @@ do
 			diff=$((old-new))
 			if [[ "$diff" -ne 0 ]]
 			then
-				echo "Of the $old input sequences, $diff do NOT have a $prot domain/family." 1>&2
+				if [[ "$diff" -eq 1 ]]
+				then
+					echo "Of the $old input sequences, $diff does NOT have a $prot domain/family." 1>&2
+				else
+					echo "Of the $old input sequences, $diff do NOT have a $prot domain/family." 1>&2
+				fi
 			else
 				echo "All input sequences have a $prot domain/family." 1>&2
 			fi
