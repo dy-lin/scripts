@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eu -o pipefail
+# set -eu -o pipefail
 PROGRAM=$(basename $0)
 gethelp=false
 map2transcript=false
@@ -26,7 +26,7 @@ fi
 fasta=$1
 gmap_gff=$2
 gff=$3
-
+dir=$(dirname $gmap_gff)
 if [[ "$map2transcript" = true ]]
 then
 	feature="\tmRNA\t"
@@ -40,9 +40,10 @@ else
 	echo "Aligning to genes..." 1>&2
 fi
 echo "Writing significant alignments to transcript-alignments.tsv..." 1>&2
-echo -e "ORF\tCDS\tTranscript\tAlignment\tCoverage\tIdentity" > transcript-alignments.tsv
+echo -e "ID\tORF\tCDS\tTranscript\tAlignment\tCoverage\tIdentity" > $dir/transcript-alignments.tsv
 while read transcript
 do
+	transcript_id=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $1}')
 	transcript_begin=$(echo $transcript | awk '{print $4}')
 	transcript_end=$(echo $transcript | awk '{print $5}')
 	transcript_CDS=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $2}' | sed 's/Name=//')
@@ -90,57 +91,104 @@ do
 			mapped=true
 			if [[ "$transcript_scaffold" =~ $gene_scaffold ]]
 			then
-				echo -e "$transcript_ORF\t$transcript_CDS\t$transcript_name\t$gene_name\t$transcript_cov\t$transcript_pid" >> transcript-alignments.tsv
+				echo -e "$transcript_id\t$transcript_ORF\t$transcript_CDS\t$transcript_name\t$gene_name\t$transcript_cov\t$transcript_pid" >> $dir/transcript-alignments.tsv
 			else
 				if [[ "$aln" = true ]]
 				then
-					echo -e "$transcript_ORF\t$transcript_CDS\t$transcript_name\t$gene_scaffold:$transcript_begin:$transcript_end\t$transcript_cov\t$transcript_pid" >> transcript-alignments.tsv
+					echo -e "$transcript_id\t$transcript_ORF\t$transcript_CDS\t$transcript_name\t$gene_scaffold:$transcript_begin:$transcript_end\t$transcript_cov\t$transcript_pid" >> $dir/transcript-alignments.tsv
 				fi
 			fi
 		fi	
 	done < <(grep -v '^#' $gff | awk -v var=$feature '$0 ~ var' )
 	if [[ "$mapped" = false ]]
 	then
-		echo -e "$transcript_ORF\t$transcript_CDS\t$transcript_name\tunmapped\t-\t-" >> transcript-alignments.tsv
+		echo -e "$transcript_id\t$transcript_ORF\t$transcript_CDS\t$transcript_name\tunmapped\t-\t-" >> $dir/transcript-alignments.tsv
 	fi
 
-done < <(grep -v '^#' $gmap_gff | awk '/\tmRNA\t/' | grep 'path1')
+# done < <(grep -v '^#' $gmap_gff | awk '/\tmRNA\t/' | grep 'identity=100' | grep 'coverage=100')
+# done < <(grep -v '^#' $gmap_gff | awk '/\tmRNA\t/' | grep 'path1')
+done < <(grep -v '^#' $gmap_gff | awk '/\tmRNA\t/')
 
 # List all genes that were mapped to
-mapped_transcripts=$(awk '!/unmapped/{print $3}' <(tail -n +2 transcript-alignments.tsv) | sort -u)
-mapped_genes=$(awk '!/unmapped/{print $4}' <(tail -n +2 transcript-alignments.tsv) | sort -u)
+mapped_transcripts=$(awk '!/unmapped/{if($6>=95 && $7>=95) print $4}' <(tail -n +2 $dir/transcript-alignments.tsv) | sort -u)
+# unmapped_transcripts=$(awk '/unmapped/ {print $4}' <(tail -n +2 $dir/transcript-alignments.tsv) | sort -u)
+mapped_genes=$(awk '!/unmapped/{if($6>=95 && $7>=95) print $5}' <(tail -n +2 $dir/transcript-alignments.tsv) | sort -u)
+# unmapped_genes=$(awk '/unmapped/ {print $5}' <(tail -n +2 $dir/transcript-alignments.tsv) | sort -u )
+leftover=$(grep -vf <(awk '{print $1}' <(echo "$mapped_genes")) <(awk -F "ID=" '/\tgene\t/ {print $2}' $gff | awk -F ";" '{print $1}'| sort -u))
+# echo $leftover
+# echo $mapped_genes
 
-if [[ -e "transcript2gene.tsv" ]]
+if [[ -e "$dir/transcript2gene.tsv" ]]
 then
-	rm transcript2gene.tsv
+	rm $dir/transcript2gene.tsv
 fi
+
 echo "Writing transcripts and their corresponding genes to transcript2gene.tsv..." 1>&2
 for i in $mapped_transcripts
 do
-	echo -en "$i\t" >> transcript2gene.tsv
-	awk -v var=$i '{if($3==var) print $4}' <(tail -n +2 transcript-alignments.tsv) | sort -u | tr '\n' ' ' >> transcript2gene.tsv
-	echo >> transcript2gene.tsv
+	echo -en "$i\t" >> $dir/transcript2gene.tsv
+	result=$(awk -v var=$i '/.mrna1/{if($4==var) print $5}' <(tail -n +2 $dir/transcript-alignments.tsv) | sort -u | tr '\n' ' ')
+	if [[ -z "$result" ]]
+	then
+		echo "-" >> $dir/transcript2gene.tsv
+	else
+		echo "$result" >> $dir/transcript2gene.tsv
+	fi
 done
 
-if [[ -e "gene2transcript.tsv" ]]
+if [[ -e "$dir/gene2transcript.tsv" ]]
 then
-	rm gene2transcript.tsv
+	rm $dir/gene2transcript.tsv
 fi
+
 echo "Writing genes and their corresponding transcripts to gene2transcript.tsv..." 1>&2
 for i in $mapped_genes
 do
-	echo -en "$i\t" >> gene2transcript.tsv
-	awk -v var=$i '{if ($4==var) print $3}' <(tail -n +2 transcript-alignments.tsv) | sort -u | tr '\n' ' ' >> gene2transcript.tsv
-	echo >> gene2transcript.tsv
+	echo -en "$i\t" >> $dir/gene2transcript.tsv
+	result=$(awk -v var=$i '/.mrna1/ {if ($5==var) print $4}' <(tail -n +2 $dir/transcript-alignments.tsv) | sort -u | tr '\n' ' ')
+	if [[ -z "$result" ]]
+	then
+		echo "-" >> $dir/gene2transcript.tsv
+	else
+		echo "$result" >> $dir/gene2transcript.tsv
+	fi
 done
 
-if [[ "$(grep -c 'unmapped' transcript-alignments.tsv)" -ne 0 ]]
+echo -e "Gene\t$(basename $dir)" > $dir/unique_transcripts.tsv
+echo "Writing genes and their corresponding CDS to gene2cds.tsv..." 1>&2
+echo "Writing genes and their unique number of transcripts to unique_transcripts.tsv..." 1>&2
+if [[ -e "$dir/gene2cds.tsv" ]]
+then
+	rm $dir/gene2cds.tsv
+fi
+for i in $mapped_genes
+do
+	echo -en "$i\t" >> $dir/gene2cds.tsv
+	awk -v var=$i '/.mrna1/ {if ($5==var) print $3}' <(tail -n +2 $dir/transcript-alignments.tsv) | sort -u | tr '\n' ' ' >> $dir/gene2cds.tsv
+	# GET CDS SEQ FOR EACH MATCH
+	num=$(uniqtag -k 252 <(seqtk subseq $fasta <(awk -v var=$i '/.mrna1/ {if ($5==var) print $3}' <(tail -n +2 $dir/transcript-alignments.tsv) | sort -u)) | grep -c '\-1$')
+	echo -e "$i\t$num" >> $dir/unique_transcripts.tsv
+	echo >> $dir/gene2cds.tsv
+done
+# echo "hi" 1>&2
+# Write missed genes to each file
+for gene in $leftover
+do
+#	echo $gene
+	echo -e "$gene\t-" >> $dir/gene2transcript.tsv
+	echo -e "$gene\t0" >> $dir/unique_transcripts.tsv
+done
+if [[ "$(grep -c 'unmapped' $dir/transcript-alignments.tsv)" -ne 0 ]]
 then
 	echo "Writing unmapped transcripts to transcript-alignments.unmapped.tsv..." 1>&2
-	head -n1 transcript-alignments.tsv > transcript-alignments.unmapped.tsv
-	awk 'BEGIN{OFS="\t"}/unmapped/' transcript-alignments.tsv >> transcript-alignments.unmapped.tsv
+	head -n1 $dir/transcript-alignments.tsv > $dir/transcript-alignments.unmapped.tsv
+	awk 'BEGIN{OFS="\t"}/unmapped/' $dir/transcript-alignments.tsv >> $dir/transcript-alignments.unmapped.tsv
 fi
 
-# what to do with unmapped transcripts?
-
+# SORT ALL THE writen files
+sort -k1 -o $dir/gene2transcript.tsv $dir/gene2transcript.tsv
+sort -k1 -o $dir/transcript2gene.tsv $dir/transcript2gene.tsv
+sort -k1 -o $dir/gene2cds.tsv $dir/gene2cds.tsv
+cat <(head -n1 $dir/unique_transcripts.tsv) <(tail -n +2 $dir/unique_transcripts.tsv | sort -k1) > temp
+mv temp $dir/unique_transcripts.tsv
 echo "...Done." 1>&2
