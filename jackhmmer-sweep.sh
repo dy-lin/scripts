@@ -28,20 +28,27 @@ do
 			then
 				echo -e "\tCOMMAND: jackhmmer --noali -T $i -N $N -o $outfile $AMP $database" 1>&2
 			fi
-			jackhmmer --noali -T $i -N $N -o $outfile $AMP $database
+			jackhmmer --noali --notextw -T $i -N $N -o $outfile $AMP $database
 		fi
 	else
 		# Pick the largest converged iteration.
 		current=$(ls jackhmmer_bs${i}_N*.out | awk -F "_N" '{print $2}' | sed 's/.out$//' | sort -g -r | head -n1)
-		echo "At bit score $i, all queries have previously converged in $current iterations. Renaming the file to match current N value." 1>&2
-		mv jackhmmer_bs${i}_N${current}.out $outfile
+		if [[ "$current" -ne "$N" ]]
+		then
+			echo "At bit score $i, all queries have previously converged in $current iterations. Renaming the file to match current N value." 1>&2
+			mv jackhmmer_bs${i}_N${current}.out $outfile
+		fi
 	fi
 	# If unconverged, delete the file -- all files that have not been deleted will have been converged/proteins found
 	converged=$(grep -c 'CONVERGED' $outfile)
 	total=$(grep -c 'Query:' $outfile)
 	if [ "$converged" -ne "$total" ]
 	then
-		echo "At bit score threshold $i, not all queries have converged. Increasing N to $((N+5))." 1>&2
+		if [[ "$x" -ge 5 ]]
+		then
+			iter=$((iter*5))
+		fi
+		echo "At bit score threshold $i, not all queries have converged. Increasing N to $((N+iter))." 1>&2
 		rm $outfile
 		echo "nc"
 		exit 0

@@ -66,22 +66,54 @@ then
 
 	for i in $(awk '/^>/' $infile | awk -F ">" ' {print $2}' | awk '{print $1}')
 	do
-		# Get scaffold name
-		temp=${i#*-}
-		scaffold=${temp%-*-gene-*-mRNA-?}
-		if [ ! -e "scaffolds/${scaffold}.scaffold.fa" ]
+		if [[ "$i" == *mRNA* ]]
 		then
-			seqtk subseq $scaffolds <(echo $scaffold) > scaffolds/${scaffold}.scaffold.fa
-			length=$(tail -n 1 "scaffolds/${scaffold}.scaffold.fa" | head -c -1 | wc -m)
-			echo -e "##gff-version 3\n##sequence-region $scaffold 1 $length" > gffs/${scaffold}.gff
-			cd igv
-			# Create IGV softlinks
-			ln -sf $(readlink -f ../scaffolds/${scaffold}.scaffold.fa)
-			ln -sf $(readlink -f ../gffs/${scaffold}.gff)
-			cd ..
+			# Get scaffold name
+			temp=${i#*-}
+			scaffold=${temp%-*-gene-*-mRNA-?}
+			if [ ! -e "scaffolds/${scaffold}.scaffold.fa" ]
+			then
+				seqtk subseq $scaffolds <(echo $scaffold) > scaffolds/${scaffold}.scaffold.fa
+				length=$(tail -n 1 "scaffolds/${scaffold}.scaffold.fa" | head -c -1 | wc -m)
+				echo -e "##gff-version 3\n##sequence-region $scaffold 1 $length" > gffs/${scaffold}.gff
+				cd igv
+				# Create IGV softlinks
+				ln -sf $(readlink -f ../scaffolds/${scaffold}.scaffold.fa)
+				ln -sf $(readlink -f ../gffs/${scaffold}.gff)
+				cd ..
+			fi
+			seqtk subseq $transcripts <(echo $i) >> transcripts/${scaffold}.transcripts.fa
+			grep ${i::-7} $gff >> gffs/${scaffold}.gff
+		else
+			gene=$(echo $i | sed 's/-R.\+//')
+			scaffold=$(grep "$gene" $gff | awk -F "\t" '{print $1}' | head -n1)
+			sitka=false
+			if [[ "$scaffold" == Ps-0.1br* ]]
+			then
+				sitka=true
+				scaffold=$(echo $scaffold | sed 's/Ps-0\.1br/Ps-1r/')
+			fi
+			if [ ! -e "scaffolds/${scaffold}.scaffold.fa" ]
+			then
+				seqtk subseq $scaffolds <(echo $scaffold) > scaffolds/${scaffold}.scaffold.fa
+				length=$(seqtk comp scaffolds/${scaffold}.scaffold.fa | awk '{print $2}')
+				echo -e "##gff-version 3\n##sequence-region $scaffold 1 $length" > gffs/${scaffold}.gff
+				cd igv
+				ln -sf $(readlink -f ../scaffolds/${scaffold}.scaffold.fa)
+				ln -sf $(readlink -f ../gffs/${scaffold}.gff)
+				cd ..
+			fi
+			seqtk subseq $transcripts <(echo $i) >> transcripts/${scaffold}.transcripts.fa
+			if [[ "$(grep -c "ID=$i" gffs/${scaffold}.gff)" -eq 0 ]]
+			then
+				grep "$gene" $gff >> gffs/${scaffold}.gff
+			fi
+			if [[ "$sitka" = true ]]
+			then
+				# If Sitka, rename scaffolds
+				sed -i 's/Ps-0\.1br/Ps-1r/g' gffs/${scaffold}.gff
+			fi
 		fi
-		seqtk subseq $transcripts <(echo $i) >> transcripts/${scaffold}.transcripts.fa
-		grep ${i::-7} $gff >> gffs/${scaffold}.gff
 	done
 
 	date=$(date | awk '{if($3<10) {print "0" $3 $2 $6} else {print $3 $2 $6}}')

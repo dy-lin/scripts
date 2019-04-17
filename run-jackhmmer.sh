@@ -3,7 +3,7 @@
 PROGRAM=$(basename $0)
 gethelp=false
 export verbose=false
-
+export iter=5
 while getopts :hv opt
 do
 	case $opt in
@@ -64,19 +64,19 @@ fi
 
 if [[ ! -z $6 ]]
 then
-	if [[ "$begin" -le 0 ]]
+	if [[ "$begin" -lt 0 ]]
 	then
 		echo "ERROR: Invalid starting threshold: $begin" 1>&2
 		exit 1
 	fi
 	end=$6
-	if [[ "$end" -le 0 ]]
+	if [[ "$end" -lt 0 ]]
 	then
 		echo "ERROR: Invalid ending threshold: $end" 1>&2
 		exit 1
 	fi
 else
-	if [[ "$begin" -le 0 ]]
+	if [[ "$begin" -lt 0 ]]
 	then
 		echo "ERROR: Invalid threshold: $begin" 1>&2
 		exit 1
@@ -92,9 +92,9 @@ function run_jackhmmer() {
 	threshold=$5
 
 	# In the case that <sweep end> = <sweep start>, meaning no sweep is needed, just a straight-forward jackhmmer with a specified threshold
-	outfile="jackhmmer_bs${threshold}_N${N}.out"
 	while true
 	do
+		outfile="jackhmmer_bs${threshold}_${N}.out"
 		echo "Running jackhmmer with a threshold of $threshold for $N iterations..." 1>&2
 		if [[ "$verbose" = true ]]
 		then
@@ -106,7 +106,7 @@ function run_jackhmmer() {
 		fi
 		if [[ ! -e "$outfile" ]]
 		then
-			jackhmmer --noali -T $threshold -N $N -o $outfile $AMP $database
+			jackhmmer --noali --notextw -T $threshold -N $N -o $outfile $AMP $database
 		fi
 		converged=$(grep -c 'CONVERGED' $outfile)
 		total=$(grep -c 'Query:' $outfile)
@@ -118,7 +118,7 @@ function run_jackhmmer() {
 				return
 			fi
 			rm $outfile
-			N=$((N+5))
+			N=$((N+iter))
 			echo "At bit score threshold $threshold, not all queries converged. Increasing N to $N." 1>&2
 		else
 			# Once converged, stop increasing iterations and break
@@ -218,6 +218,7 @@ then
 			done < <(jackhmmer -h | head -n 5)
 			echo -e "\tCOMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
 		fi
+		export x=1
 		sweep=$(jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step)
 		# If sweep > 0, then script executed with no problems
 		while true
@@ -225,12 +226,17 @@ then
 			# If sweep = 1, jackhmmer did not converge
 			if [ "$sweep" == "nc" ]
 			then
-				N=$((N+5))
+				if [[ "$x" -ge 5 ]]
+				then
+					export iter=$((iter*5))
+				fi
+				N=$((N+iter))
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				if [[ "$verbose" = true ]]
 				then
 					echo -e "\tCOMMAND: jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step" 1>&2
 				fi
+				export x=$((x+1))
 				sweep=$(jackhmmer-sweep.sh $AMP $lit $database $N $begin $end $step)
 			# If sweep = 2, the sweep start is too high
 			elif [ "$sweep" == "high" ]
@@ -260,6 +266,7 @@ then
 				else
 					begin=$((end-difference))
 				fi
+					export x=1
 				echo "Conducting jackhmmer sweep from $begin to $end in $step-step intervals for $N iterations..." 1>&2
 				if [[ "$verbose" = true ]]
 				then
@@ -278,6 +285,7 @@ then
 			then
 				interval=$((end-begin))
 				begin=$end
+				export x=1
 				end=$((begin + interval))
 				if [ "$step" -eq 1 ]
 				then
@@ -295,6 +303,7 @@ then
 			else
 				end=$sweep
 				begin=$((end-step))
+				export x=1
 				if [ "$step" -eq 100 ]
 				then
 					step=10
@@ -324,6 +333,11 @@ then
 		threshold=$((sweep-1))
 		echo -e "\nBit score threshold $threshold is the optimal threshold to use when running jackhmmer!\n" 1>&2
 		outfile="jackhmmer_bs${threshold}_N${N}.out"
+		if [[ ! -s "$outfile" ]]
+		then
+			run_jackhmmer $AMP $lit $database $N $threshold
+		fi
+
 		# Delete all jackhmmer output files that are unnecessary
 		for file in jackhmmer_bs*_N*.out
 		do
@@ -345,6 +359,13 @@ else
 	outfile="jackhmmer_bs${begin}_N${N}.out"
 	echo "Bit score $begin threshold detected!" 1>&2
 	run_jackhmmer $AMP $lit $database $N $begin
+fi
+
+finalN=$(awk '/CONVERGED/ {print $4}' $outfile | sort -gr | head -n1)
+if [[ "$finalN" -lt "$N" ]]
+then
+	mv $outfile jackhmmer_bs${threshold}_N${finalN}.out
+	outfile="jackhmmer_bs${threshold}_N${finalN}.out"
 fi
 
 # Filter jackhmmer results for all hits (start with >>), and remove duplicates, then get their sequences using their names

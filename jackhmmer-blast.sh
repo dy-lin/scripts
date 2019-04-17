@@ -15,7 +15,7 @@ command="COMMAND: $PROGRAM $*"
 shift $((OPTIND-1))
 if [[ "$#" -ne 3  ]]
 then
-	echo "USAGE: $PROGRAM <class of AMPs> <database> <output file>" 1>&2
+	echo "USAGE: $PROGRAM <AMP sequences> <JACKHMMER database> <JACKHMMER output file>" 1>&2
 	echo -e "OPTIONS:\n\t-h\tShow help menu\n\t-v\tverbose logging" 1>&2
 	exit 1
 fi
