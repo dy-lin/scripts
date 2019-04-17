@@ -2,7 +2,15 @@
 PROGRAM=$(basename $0)
 threads=48
 gethelp=false
-while getopts :ht $opt
+
+if [[  "$#" -eq 0 ]]
+then
+	echo "USAGE: $PROGRAM <BLAST program> <query> <subject> [output directory]" 1>&2
+	echo "DESCRIPTION: Blasts the query file against the subject file." 1>&2
+	echo -e "OPTIONS:\n\t-h\tShow help menu\n\t-t\tnumber of threads" 1>&2
+	exit 1
+fi
+while getopts :ht: opt
 do
 	case $opt in
 		h) gethelp=true;;
