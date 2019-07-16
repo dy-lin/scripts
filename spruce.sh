@@ -148,7 +148,7 @@ case $file in
 				;;
 		esac
 		;;
-	[A][Ll][Ll])
+	[Aa][Ll][Ll])
 		echo -ne "Scaffolds:\t"
 		spruce.sh $spruce scaffolds
 		echo -ne "Transcripts:\t"
