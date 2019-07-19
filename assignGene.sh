@@ -22,12 +22,18 @@ then
 		then
 			processGMAP.sh PG29.gmap.gff
 		fi
+
+		if [[ ! -e "output.scores.psl" ]]
+		then
+			pslScore output.psl > output.scores.psl
+		fi
 		for t in $transcripts
 		do
 			# Get the alignments for each transcript, sorting by percent identity
-			blast_highest_pid_line=$(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r | head -n1)
+			blast_highest_pid_line=$(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr | head -n1)
 			blast_highest_pid=$(echo "$blast_highest_pid_line" | awk '{print $3}')
-			blast_count=$(awk -v var="$blast_highest_pid" '{if($3==var) print}' <(grep $t clustered_transcripts.tsv.blastn) | wc -l)
+			blast_lowest_eval=$(echo "$blast_highest_pid_line" | awk '{print $11}')
+			blast_count=$(awk -v var="$blast_highest_pid" -v bar="$blast_lowest_eval" '{if($3==var && $11==bar) print}' <(grep $t clustered_transcripts.tsv.blastn) | wc -l)
 			if [[ "$blast_count" -gt 1 ]]
 			then
 				# do other stuff
@@ -38,9 +44,10 @@ then
 
 			# READ from GMAP TSV
 
-			gmap_highest_pid_line=$(grep $t PG29.gmap.tsv | sort -k3,3 -g -r | head -n1)
+			gmap_highest_pid_line=$(grep $t PG29.gmap.tsv | sort -k8,8gr -k3,3gr | head -n1)
 			gmap_highest_pid=$(echo "$gmap_highest_pid_line" | awk '{print $3}')
-			gmap_count=$(awk -v var="$gmap_highest_pid" '{if($3==var) print}' <(grep $t PG29.gmap.tsv) | wc -l)
+			gmap_highest_cov=$(echo "$gmap_highest_pid_line" | awk '{print $8}')
+			gmap_count=$(awk -v var="$gmap_highest_pid" -v bar="$gmap_highest_cov" '{if($3==var && $8==bar) print}' <(grep $t PG29.gmap.tsv) | wc -l)
 			if [[ "$gmap_count" -gt 1 ]]
 			then
 				# do other stuff?
@@ -50,15 +57,16 @@ then
 			fi
 
 		# READ FROM BLAT 
-
-			highest_match_line=$(grep $t output.psl | sort -k1,1 -g -r | head -n1)
-			highest_match=$(echo "$highest_match_line" | awk '{print $1}')
-			blat_count=$(awk -v var="$highest_match" '{if($1==var) print}' <(grep $t output.psl) | wc -l )
+			
+			highest_match_line=$(grep $t output.scores.psl | sort -k6,6gr -k5,5gr | head -n1)
+			highest_match=$(echo "$highest_match_line" | awk '{print $5}')
+			highest_pid=$(echo "$highest_match_line" | awk '{print $6}')
+			blat_count=$(awk -v var="$highest_match" -v bar="$highest_pid" '{if($5==var && $6==bar) print}' <(grep $t output.scores.psl) | wc -l )
 			if [[ "$blat_count" -gt 1 ]]
 			then
 				blat="multiple"
 			else
-				blat=$(echo "$highest_match_line" | awk '{print $14}' | sed 's/-R.//')
+				blat=$(echo "$highest_match_line" | awk '{print $1}' | sed 's/-R.//')
 			fi
 
 			if [[ "$blast" == "$blat" && "$blast" == "$gmap"  && "$blast" != "multiple" ]]
@@ -71,7 +79,7 @@ then
 #				echo "Multiple check"
 				if [[ "$blast" == "multiple" ]]
 				then
-					unique=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
 						blast=$(echo "$blast_highest_pid_line" | awk '{print $2}' | sed 's/-R.//')
@@ -80,7 +88,7 @@ then
 
 				if [[ "$gmap" == "multiple" ]]
 				then
-					unique=$(head -n $gmap_count <(grep $t PG29.gmap.tsv | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $gmap_count <(grep $t PG29.gmap.tsv | sort -k8,8gr -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
 						gmap=$(echo "$gmap_highest_pid_line" | awk '{print $2}' |sed 's/-R.//')
@@ -89,10 +97,10 @@ then
 
 				if [[ "$blat" == "multiple" ]]
 				then
-					unique=$(head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r )| awk '{print $14}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $blat_count <(grep $t output.scores.psl | sort -k6,6gr -k5,5gr )| awk '{print $1}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
-						blat=$(echo "$highest_match_line" | awk '{print $14}' | sed 's/-R.//')
+						blat=$(echo "$highest_match_line" | awk '{print $1}' | sed 's/-R.//')
 					fi
 				fi
 
@@ -101,14 +109,14 @@ then
 					echo -e "$t\tRESOLVED MULTIPLE - CONFLICT"
 					if [[ "$blast" == "multiple" ]]
 					then
-						blast=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u)
+						blast=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u)
 						blast=$(echo "$blast" | tr '\n' ' ')
 					fi
 						echo -e "\tBLAST:\t$blast"
 
 					if [[ "$gmap" == "multiple" ]]
 					then
-						gmap=$(head -n $gmap_count <(grep $t PG29.gmap.tsv | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u)
+						gmap=$(head -n $gmap_count <(grep $t PG29.gmap.tsv | sort -k8,8gr -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u)
 						gmap=$(echo "$gmap" | tr '\n' ' ')
 					fi
 						echo -e "\tGMAP:\t$gmap"
@@ -116,7 +124,7 @@ then
 
 					if [[ "$blat" == "multiple" ]]
 					then
-						blat=$(head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r )| awk '{print $14}' | sed 's/-R.//' | sort -u)
+						blat=$(head -n $blat_count <(grep $t output.scores.psl | sort -k6,6gr -k5,5gr )| awk '{print $1}' | sed 's/-R.//' | sort -u)
 						blat=$(echo "$blat" | tr '\n' ' ')
 					fi
 						echo -e "\tBLAT:\t$blat"
@@ -127,9 +135,9 @@ then
 
 				#	echo -e "$t\tUNRESOLVED MULTIPLE"
 				#	echo -e "\tBLAST:"
-				#	head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r | sed 's/^/\t\t/')
+				#	head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr | sed 's/^/\t\t/')
 				#	echo -e "\tGMAP:"
-				#	head -n $gmap_count <(grep $t PG29.gmap.tsv | sort -k3,3 -g -r | sed 's/^/\t\t/')
+				#	head -n $gmap_count <(grep $t PG29.gmap.tsv | sort -k8,8gr -k3,3gr | sed 's/^/\t\t/')
 				#	echo -e "\tBLAT:"
 				#	head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r | sed 's/^/\t\t/')
 				else
@@ -180,12 +188,18 @@ else
 		then
 			processGMAP.sh Q903.gmap.gff
 		fi
+
+		if [[ ! -e "output.scores.psl" ]]
+		then
+			pslScore output.psl > output.scores.psl
+		fi
 		for t in $transcripts
 		do
 			# Get the alignments for each transcript, sorting by percent identity
-			blast_highest_pid_line=$(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r | head -n1)
+			blast_highest_pid_line=$(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr | head -n1)
 			blast_highest_pid=$(echo "$blast_highest_pid_line" | awk '{print $3}')
-			blast_count=$(awk -v var="$blast_highest_pid" '{if($3==var) print}' <(grep $t clustered_transcripts.tsv.blastn) | wc -l)
+			blast_lowest_eval=$(echo "$blast_highest_pid_line" | awk '{print $11}')
+			blast_count=$(awk -v var="$blast_highest_pid" -v bar="$blast_lowest_eval" '{if($3==var && $11==bar) print}' <(grep $t clustered_transcripts.tsv.blastn) | wc -l)
 			if [[ "$blast_count" -gt 1 ]]
 			then
 				# do other stuff
@@ -196,9 +210,10 @@ else
 
 			# READ from GMAP TSV
 
-			gmap_highest_pid_line=$(grep $t Q903.gmap.tsv | sort -k3,3 -g -r | head -n1)
+			gmap_highest_pid_line=$(grep $t Q903.gmap.tsv | sort -k8,8gr -k3,3gr | head -n1)
 			gmap_highest_pid=$(echo "$gmap_highest_pid_line" | awk '{print $3}')
-			gmap_count=$(awk -v var="$gmap_highest_pid" '{if($3==var) print}' <(grep $t Q903.gmap.tsv) | wc -l) 
+			gmap_highest_cov=$(echo "$gmap_highest_pid_line" | awk '{print $8}')
+			gmap_count=$(awk -v var="$gmap_highest_pid" -v bar="$gmap_highest_cov" '{if($3==var && $8==bar) print}' <(grep $t Q903.gmap.tsv) | wc -l) 
 			if [[ "$gmap_count" -gt 1 ]]
 			then
 				# do other stuff?
@@ -209,14 +224,15 @@ else
 
 		# READ FROM BLAT 
 
-			highest_match_line=$(grep $t output.psl | sort -k1,1 -g -r | head -n1)
-			highest_match=$(echo "$highest_match_line" | awk '{print $1}')
-			blat_count=$(awk -v var="$highest_match" '{if($1==var) print}' <(grep $t output.psl) | wc -l)
+			highest_match_line=$(grep $t output.scores.psl | sort -k1,1 -g -r | head -n1)
+			highest_match=$(echo "$highest_match_line" | awk '{print $5}')
+			highest_pid=$(echo "$highest_match_line" | awk '{print $6}')
+			blat_count=$(awk -v var="$highest_match" -v bar="$highest_pid" '{if($5==var && $6==bar) print}' <(grep $t output.scores.psl) | wc -l)
 			if [[ "$blat_count" -gt 1 ]]
 			then
 				blat="multiple"
 			else
-				blat=$(echo "$highest_match_line" | awk '{print $14}' | sed 's/-R.//')
+				blat=$(echo "$highest_match_line" | awk '{print $1}' | sed 's/-R.//')
 			fi
 
 			if [[ "$blast" == "$blat" && "$blast" == "$gmap"  && "$blast" != "multiple" ]]
@@ -228,7 +244,7 @@ else
 #				echo "Multiple check"
 				if [[ "$blast" == "multiple" ]]
 				then
-					unique=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
 						blast=$(echo "$blast_highest_pid_line" | awk '{print $2}' | sed 's/-R.//')
@@ -237,7 +253,7 @@ else
 
 				if [[ "$gmap" == "multiple" ]]
 				then
-					unique=$(head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k8,8gr -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
 						gmap=$(echo "$gmap_highest_pid_line" | awk '{print $2}' |sed 's/-R.//')
@@ -246,10 +262,10 @@ else
 
 				if [[ "$blat" == "multiple" ]]
 				then
-					unique=$(head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r )| awk '{print $14}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $blat_count <(grep $t output.scores.psl | sort -k6,6gr -k5,5gr)| awk '{print $1}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
-						blat=$(echo "$highest_match_line" | awk '{print $14}' | sed 's/-R.//')
+						blat=$(echo "$highest_match_line" | awk '{print $1}' | sed 's/-R.//')
 					fi
 				fi
 
@@ -259,14 +275,14 @@ else
 					echo -e "$t\tRESOLVED MULTIPLE - CONFLICT"
 					if [[ "$blast" == "multiple" ]]
 					then
-						blast=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u)
+						blast=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u)
 						blast=$(echo "$blast" | tr '\n' ' ')
 					fi
 						echo -e "\tBLAST:\t$blast"
 
 					if [[ "$gmap" == "multiple" ]]
 					then
-						gmap=$(head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u)
+						gmap=$(head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k8,8gr -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u)
 						gmap=$(echo "$gmap" | tr '\n' ' ')
 					fi
 						echo -e "\tGMAP:\t$gmap"
@@ -274,7 +290,7 @@ else
 
 					if [[ "$blat" == "multiple" ]]
 					then
-						blat=$(head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r )| awk '{print $14}' | sed 's/-R.//' | sort -u)
+						blat=$(head -n $blat_count <(grep $t output.scores.psl | sort -k6,6gr -k5,5gr) | awk '{print $1}' | sed 's/-R.//' | sort -u)
 						blat=$(echo "$blat" | tr '\n' ' ')
 					fi
 						echo -e "\tBLAT:\t$blat"
@@ -285,9 +301,9 @@ else
 
 				#	echo -e "$t\tUNRESOLVED MULTIPLE"
 				#	echo -e "\tBLAST:"
-				#	head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r | sed 's/^/\t\t/')
+				#	head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr | sed 's/^/\t\t/')
 				#	echo -e "\tGMAP:"
-				#	head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k3,3 -g -r | sed 's/^/\t\t/')
+				#	head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k8,8gr -k3,3gr | sed 's/^/\t\t/')
 				#	echo -e "\tBLAT:"
 				#	head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r | sed 's/^/\t\t/')
 				else
@@ -338,12 +354,18 @@ else
 		then
 			processGMAP.sh Q903.gmap.gff
 		fi
+
+		if [[ ! -e "output.scores.psl" ]]
+		then
+			pslScore output.psl > output.scores.psl
+		fi
 		for t in $transcripts
 		do
 			# Get the alignments for each transcript, sorting by percent identity
-			blast_highest_pid_line=$(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r | head -n1)
+			blast_highest_pid_line=$(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr | head -n1)
 			blast_highest_pid=$(echo "$blast_highest_pid_line" | awk '{print $3}')
-			blast_count=$(awk -v var="$blast_highest_pid" '{if($3==var) print}' <(grep $t clustered_transcripts.tsv.blastn) | wc -l)
+			blast_lowest_eval=$(echo "$blast_highest_pid_line" | awk '{print $11}')
+			blast_count=$(awk -v var="$blast_highest_pid" -v bar="$blast_lowest_eval" '{if($3==var && $11==bar) print}' <(grep $t clustered_transcripts.tsv.blastn) | wc -l)
 			if [[ "$blast_count" -gt 1 ]]
 			then
 				# do other stuff
@@ -354,9 +376,10 @@ else
 
 			# READ from GMAP TSV
 
-			gmap_highest_pid_line=$(grep $t Q903.gmap.tsv | sort -k3,3 -g -r | head -n1)
+			gmap_highest_pid_line=$(grep $t Q903.gmap.tsv | sort -k8,8gr -k3,3gr | head -n1)
 			gmap_highest_pid=$(echo "$gmap_highest_pid_line" | awk '{print $3}')
-			gmap_count=$(awk -v var="$gmap_highest_pid" '{if($3==var) print}'  <(grep $t Q903.gmap.tsv) | wc -l)
+			gmap_highest_cov=$(echo "$gmap_highest_pid_line" | awk '{print $8}')
+			gmap_count=$(awk -v var="$gmap_highest_pid" -v bar="$gmap_highest_cov" '{if($3==var && $8==bar) print}'  <(grep $t Q903.gmap.tsv) | wc -l)
 			if [[ "$gmap_count" -gt 1 ]]
 			then
 				# do other stuff?
@@ -367,14 +390,15 @@ else
 
 		# READ FROM BLAT 
 
-			highest_match_line=$(grep $t output.psl | sort -k1,1 -g -r | head -n1)
-			highest_match=$(echo "$highest_match_line" | awk '{print $1}')
-			blat_count=$(awk -v var="$highest_match" '{if($1==var) print}' <(grep $t output.psl)| wc -l)
+			highest_match_line=$(grep $t output.scores.psl | sort -k6,6gr -k5,5gr | head -n1)
+			highest_match=$(echo "$highest_match_line" | awk '{print $5}')
+			highest_pid=$(echo "$highest_match_line" | awk '{print $6}')
+			blat_count=$(awk -v var="$highest_match" -v bar="$highest_pid" '{if($5==var && $6==bar) print}' <(grep $t output.scores.psl)| wc -l)
 			if [[ "$blat_count" -gt 1 ]]
 			then
 				blat="multiple"
 			else
-				blat=$(echo "$highest_match_line" | awk '{print $14}' | sed 's/-R.//')
+				blat=$(echo "$highest_match_line" | awk '{print $1}' | sed 's/-R.//')
 			fi
 
 			if [[ "$blast" == "$blat" && "$blast" == "$gmap"  && "$blast" != "multiple" ]]
@@ -386,7 +410,7 @@ else
 #				echo "Multiple check"
 				if [[ "$blast" == "multiple" ]]
 				then
-					unique=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
 						blast=$(echo "$blast_highest_pid_line" | awk '{print $2}' | sed 's/-R.//')
@@ -395,7 +419,7 @@ else
 
 				if [[ "$gmap" == "multiple" ]]
 				then
-					unique=$(head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k8,8gr -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
 						gmap=$(echo "$gmap_highest_pid_line" | awk '{print $2}' |sed 's/-R.//')
@@ -404,10 +428,10 @@ else
 
 				if [[ "$blat" == "multiple" ]]
 				then
-					unique=$(head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r )| awk '{print $14}' | sed 's/-R.//' | sort -u | wc -l)
+					unique=$(head -n $blat_count <(grep $t output.scores.psl | sort -k6,6gr -k5,5gr)| awk '{print $1}' | sed 's/-R.//' | sort -u | wc -l)
 					if [[ "$unique" -eq 1 ]]
 					then
-						blat=$(echo "$highest_match_line" | awk '{print $14}' | sed 's/-R.//')
+						blat=$(echo "$highest_match_line" | awk '{print $1}' | sed 's/-R.//')
 					fi
 				fi
 
@@ -416,14 +440,14 @@ else
 					echo -e "$t\tRESOLVED MULTIPLE - CONFLICT"
 					if [[ "$blast" == "multiple" ]]
 					then
-						blast=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u)
+						blast=$(head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u)
 						blast=$(echo "$blast" | tr '\n' ' ')
 					fi
 						echo -e "\tBLAST:\t$blast"
 
 					if [[ "$gmap" == "multiple" ]]
 					then
-						gmap=$(head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k3,3 -g -r) | awk '{print $2}' | sed 's/-R.//' | sort -u)
+						gmap=$(head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k8,8gr -k3,3gr) | awk '{print $2}' | sed 's/-R.//' | sort -u)
 						gmap=$(echo "$gmap" | tr '\n' ' ')
 					fi
 						echo -e "\tGMAP:\t$gmap"
@@ -431,7 +455,7 @@ else
 
 					if [[ "$blat" == "multiple" ]]
 					then
-						blat=$(head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r )| awk '{print $14}' | sed 's/-R.//' | sort -u)
+						blat=$(head -n $blat_count <(grep $t output.scores.psl | sort -k6,6gr -k5,5gr )| awk '{print $1}' | sed 's/-R.//' | sort -u)
 						blat=$(echo "$blat" | tr '\n' ' ')
 					fi
 						echo -e "\tBLAT:\t$blat"
@@ -444,11 +468,11 @@ else
 #					then
 #						echo -e "$t\tUNRESOLVED MULTIPLE"
 #						echo -e "\tBLAST:"
-#						head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k3,3 -g -r | sed 's/^/\t\t/')
+#						head -n $blast_count <(grep $t clustered_transcripts.tsv.blastn | sort -k11,11g -k3,3gr | sed 's/^/\t\t/')
 #						echo -e "\tGMAP:"
-#						head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k3,3 -g -r | sed 's/^/\t\t/')
+#						head -n $gmap_count <(grep $t Q903.gmap.tsv | sort -k8,8gr -k3,3gr | sed 's/^/\t\t/')
 #						echo -e "\tBLAT:"
-#						head -n $blat_count <(grep $t output.psl | sort -k1,1 -g -r | sed 's/^/\t\t/')
+#						head -n $blat_count <(grep $t output.scores.psl | sort -k6,6gr -k5,5gr | sed 's/^/\t\t/')
 #					fi
 				else
 					echo -e "$t\tRESOLVED MULTIPLE - CONFLICT"
