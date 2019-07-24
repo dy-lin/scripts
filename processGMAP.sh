@@ -7,9 +7,9 @@ then
 	exit 1 
 fi
 gff=$1
-#short file name, rids the gmap.gff portion.
-filename=${gff%%.*}
-outfile=${filename}.gmap.tsv
+#long file name, rids the .gff portion.
+filename=${gff%.*}
+outfile=${filename}.tsv
 
 # print headers first
 echo -e "Query\tSubject\tPID\tMatches\tMismatches\tIndels\tUnknowns\tCov\tSstart\tSend" > $outfile
