@@ -35,6 +35,7 @@ if [ -z "${splice}" ]; then
         -O \
         -n 10000 \
         $infile > $dir/${prefix}.gmapl.gff 2> $dir/${prefix}.gmapl.log
+	processGMAP.sh $dir/${prefix}.gmapl.gff
 	if [[ "$?" -eq 9 ]]
 	then
 		echo "Genome is too small to run gmapl. Running gmap..." 1>&2
@@ -53,6 +54,7 @@ else
         -O \
         -n 10000 \
         $infile > $dir/${prefix}.gmapl.gff 2> $dir/${prefix}.gmapl.log
+	processGMAP.sh $dir/${prefix}.gmapl.gff
 	if [[ "$?" -eq 9 ]]
 	then
 		echo "Genome is too small to run gmapl. Running gmap..." 1>&2
