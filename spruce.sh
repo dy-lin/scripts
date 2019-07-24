@@ -38,6 +38,9 @@ case $file in
 			[Qq]903 | [Qq] | 903)
 				echo "/projects/spruceup/psitchensis/Q903/assembly/releases/version1/Q903_v1_1000plus.fa"
 				;;
+			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+				# Preparing for Engelmann files.
+				;;
 			[Aa][Ll][Ll])
 				echo -ne "WS77111:\t"
 				spruce.sh WS77111 $file
@@ -45,6 +48,8 @@ case $file in
 				spruce.sh Q903 $file
 				echo -ne "PG29:\t\t"
 				spruce.sh PG29 $file
+				# echo -ne "Se404-851:\t\t"
+				# spruce.sh Se404-851 $file
 				;;
 			\?)
 				echo "Invalid genotype." 1>&2
@@ -63,6 +68,10 @@ case $file in
 			[Qq]903 | [Qq] | 903)
 				echo "/projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/Polish/ThirdIteration/NcbiSubmission/Q903.all.maker.transcriptsLoweAED.renamed.function.fasta"
 				;;
+			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+				# Preparing for Engelmann files.
+				;;
+
 			[Aa][Ll][Ll])
 				echo -ne "WS77111:\t"
 				spruce.sh WS77111 $file
@@ -70,6 +79,8 @@ case $file in
 				spruce.sh Q903 $file
 				echo -ne "PG29:\t\t"
 				spruce.sh PG29 $file
+				# echo -ne "Se404-851:\t\t"
+				# spruce.sh Se404-851 $file
 				;;	
 			\?)
 				echo "Invalid genotype." 1>&2
@@ -86,8 +97,13 @@ case $file in
 				echo "/projects/spruceup_scratch/interior_spruce/PG29/annotation/genome-annotation/PG29v5/Maker/Polish/ThirdIterationCumulatNonntEdit/NcbiSubmission/PG29.all.polished.genesLoweAED.function_domain.gff"
 				;;
 			[Qq]903 | [Qq] | 903)
-				echo "/projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/Polish/ThirdIteration/NcbiSubmission/Q903.all.polished.genesLoweAED.function_domain.gff"
+				echo "/projects/btl/dlin/scratch/spruce/defensins/Q903.all.polished.genesLoweAED.function_domain.scaffoldrenamed.gff"
+				# echo "/projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/Polish/ThirdIteration/NcbiSubmission/Q903.all.polished.genesLoweAED.function_domain.gff"
 				;;
+			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+				# Preparing for Engelmann files.
+				;;
+
 			[Aa][Ll][Ll])
 				echo -ne "WS77111:\t"
 				spruce.sh WS77111 $file
@@ -95,6 +111,8 @@ case $file in
 				spruce.sh Q903 $file
 				echo -ne "PG29:\t\t"
 				spruce.sh PG29 $file
+				# echo -ne "Se404-851:\t\t"
+				# spruce.sh Se404-851 $file
 				;;	
 			\?)
 				echo "Invalid genotype" 1>&2
@@ -113,6 +131,10 @@ case $file in
 			[Qq]903 | [Qq] | 903)
 				echo "/projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/Polish/ThirdIteration/NcbiSubmission/Q903.CompleteFinal.map"
 				;;
+			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+					# Preparing for Engelmann files.
+				;;
+
 			[Aa][Ll][Ll])
 				echo -ne "WS77111:\t"
 				spruce.sh WS77111 $file
@@ -120,6 +142,8 @@ case $file in
 				spruce.sh Q903 $file
 				echo -ne "PG29\t\t"
 				spruce.sh PG29 $file
+				# echo -ne "Se404-851:\t\t"
+				# spruce.sh Se404-851 $file
 				;;	
 			\?)
 				echo "Invalid genotype." 1>&2
@@ -138,6 +162,10 @@ case $file in
 			[Qq]903 | [Qq] | 903)
 				echo "/projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/Polish/ThirdIteration/NcbiSubmission/Q903.all.maker.proteinsLoweAED.renamed.function.fasta"
 				;;
+			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+				# Preparing for Engelmann files.
+				;;
+
 			[Aa][Ll][Ll])
 				echo -ne "WS77111:\t"
 				spruce.sh WS77111 $file
@@ -145,6 +173,8 @@ case $file in
 				spruce.sh Q903 $file
 				echo -ne "PG29:\t\t"
 				spruce.sh PG29 $file
+				# echo -ne "Se404-851:\t\t"
+				# spruce.sh Se404-851 $file
 				;;
 		esac
 		;;
@@ -159,6 +189,10 @@ case $file in
 			[Qq]903 | [Qq] | 903)
 				echo "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/jackhmmer-proteome/defensins/final"
 				;;
+			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+				# Preparing for Engelmann files.
+				;;
+
 			[Aa][Ll][Ll])
 				echo -ne "WS77111:\t"
 				spruce.sh WS77111 $file
@@ -166,6 +200,8 @@ case $file in
 				spruce.sh Q903 $file
 				echo -ne "PG29:\t\t"
 				spruce.sh PG29 $file
+				# echo -ne "Se404-851:\t\t"
+				# spruce.sh Se404-851 $file
 				;;
 		esac
 		;;
