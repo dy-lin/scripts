@@ -5,13 +5,15 @@ average=false
 median=false
 mode=false
 gethelp=false
-while getopts :amoh opt
+sum=false
+while getopts :amosh opt
 do
 	case $opt in
 		a) average=true;;
 		h) gethelp=true;;
 		m) median=true;;
 		o) mode=true;;
+		s) sum=true;;
 		\?) echo "$PROGRAM: invalid option: $opt" >&2; exit 1;;
 	esac
 done
@@ -20,7 +22,7 @@ if [[ "$gethelp" = true ]]
 then
 	echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
 	echo "DESCRIPTION: Takes a file with numbers, and prints the desired calculation result to STDOUT." 1>&2
-	echo -e "OPTIONS: At least ONE of -a, -m or -o must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-h\tShow help menu" 1>&2 
+	echo -e "OPTIONS: At least ONE of -a, -m, -o or -s must be selected.\n\t-a\tmean (average) \n\t-m\tmedian\n\t-o\tmode\n\t-s\tsum\n\t-h\tShow help menu" 1>&2 
 	exit 1
 fi
 
@@ -103,7 +105,7 @@ then
 fi
 
 
-if [[ "$average" = false && "$median" = false && "$mode" = false ]]
+if [[ "$average" = false && "$median" = false && "$mode" = false && "$sum" = false ]]
 then
 	echo "ERROR: At least one calculation has to be selected." 1>&2
 	echo "USAGE: $PROGRAM [OPTIONS] <FILE>" 1>&2
@@ -173,6 +175,25 @@ then
 		fi
 fi
 
+if [[ "$sum" = true ]]
+then
+	if [[ "$linecount" -eq 1 ]]
+	then
+		echo "Array detected! Calculating sum..." 1>&2
+		cat $file | awk '{print}' | tr ' ' '\n' | awk '{sum+=$1} END{ if (NR !=0) {print "Sum: " sum} else { print "There are no numbers given!"; exit 1}}'
+	else
+		echo "Calculating sum..." 1>&2
+		awk '{sum+=$1} END {if (NR !=0) {print "Sum: " sum} else {print "There are no numbers given!"; exit 1}}' $file
+	fi
+		if [[ "$?" -eq 1 ]]
+		then
+			if [[ -e "temp.out" ]]
+			then
+				rm temp.out
+			fi
+			exit 1
+		fi
+fi
 if [[ "$mode" = true ]]
 then
 	if [[ "$linecount" -eq 1 ]]
