@@ -66,9 +66,24 @@ do
 	transcript_id=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $1}')
 	transcript_begin=$(echo $transcript | awk '{print $4}')
 	transcript_end=$(echo $transcript | awk '{print $5}')
-	transcript_CDS=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $2}' | sed 's/Name=//')
-	transcript_ORF=$(grep $transcript_CDS $fasta | awk '{print $2}')
-	transcript_name=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $2}' | awk -F ":" '{print $1}' | sed 's/Name=lcl|//')
+	if [[ "$(grep -c 'lcl' $fasta)" -ne 0 ]]
+	then
+		transcript_CDS=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $2}' | sed 's/Name=//')
+	else
+		transcript_CDS="-"
+	fi
+	if [[ "$(grep -c 'ORF' $fasta)" -ne 0 ]]
+	then
+		transcript_ORF=$(grep $transcript_CDS $fasta | awk '{print $2}')
+	else
+		transcript_ORF="-"
+	fi
+	if [[ "$(grep -c 'lcl' $fasta)" -ne 0 ]]
+	then
+		transcript_name=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $2}' | awk -F ":" '{print $1}' | sed 's/Name=lcl|//')
+	else
+		transcript_name=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $2}' | awk -F ":" '{print $1}' | sed 's/Name=//')
+	fi
 	transcript_cov=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $4}' | sed 's/coverage=//')
 	transcript_pid=$(echo $transcript | awk '{print $9}' | awk -F ";" '{print $5}' | sed 's/identity=//')
 	transcript_scaffold=$(echo $transcript | awk '{print $1}')
@@ -155,7 +170,6 @@ do
 		echo "$result" >> $dir/${prefix}transcript2gene.tsv
 	fi
 done
-
 if [[ -e "$dir/${prefix}gene2transcript.tsv" ]]
 then
 	rm $dir/${prefix}gene2transcript.tsv
@@ -208,7 +222,6 @@ then
 	head -n1 $dir/${prefix}transcript-alignments.tsv > $dir/${prefix}transcript-alignments.unmapped.tsv
 	awk 'BEGIN{OFS="\t"}/unmapped/' $dir/${prefix}transcript-alignments.tsv >> $dir/${prefix}transcript-alignments.unmapped.tsv
 fi
-
 # SORT ALL THE writen files
 sort -k1 -o $dir/${prefix}gene2transcript.tsv $dir/${prefix}gene2transcript.tsv
 sort -k1 -o $dir/${prefix}transcript2gene.tsv $dir/${prefix}transcript2gene.tsv
