@@ -1,12 +1,19 @@
 #!/bin/bash
-stdin=$(cat)
+# stdin=$(cat)
 PROGRAM=$(basename $0)
-if [[ ! -p "/dev/stdin" && "$#" -lt 1 ]]
+if [[ ! -p "/dev/stdin" &&  "$#" -lt 1 ]]
 then
 	echo "USAGE: $PROGRAM <FASTA file(s)>" 1>&2
 	echo "DESCRIPTION: Takes FASTA file(s) as input, and outputs each sequence in a separate FASTA file." 1>&2
 	exit 1
 fi
+stdin=$(cat)
+# if [[ "$#" -lt 1 ]]
+# then
+# 	echo "USAGE: $PROGRAM <FASTA file(s)>" 1>&2
+# 	echo "DESCRIPTION: Takes FASTA file(s) as input, and outputs each sequence in a separate FASTA file." 1>&2
+# 	exit 1
+# fi
 
 # Read ID and sequence
 if [[ "$#" -ge 1 ]]

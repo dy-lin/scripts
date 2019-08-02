@@ -21,10 +21,19 @@ else
 	bottom_scaffold=$1
 	top_length="$length2"
 fi
+if [[ "$(echo $top_scaffold | grep -c 'rc')" -eq 0 ]]
+then
+	top=$(echo $top_scaffold | sed 's/.scaffold.fa//')
+else
+	top=$(echo $top_scaffold | sed 's/.scaffold.rc.fa//').rc
+fi
 
-top=$(echo $top_scaffold | sed 's/.scaffold.fa//')
-bottom=$(echo $bottom_scaffold | sed 's/.scaffold.fa//')
-
+if [[ "$(echo $bottom_scaffold | grep -c 'rc')" -eq 0 ]]
+then
+	bottom=$(echo $bottom_scaffold | sed 's/.scaffold.fa//')
+else
+	bottom=$(echo $bottom_scaffold | sed 's/.scaffold.rc.fa//').rc
+fi
 
 rep=${bottom}_vs_${top}.rep
 if [[ ! -e "$rep" ]]
