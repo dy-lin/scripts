@@ -11,7 +11,9 @@ fi
 
 for file in $@
 do
-	ln -s $file
+	file_path=$(readlink -f $file)
+	filename=$(basename $file)
+	ln -s $file_path $filename
 done
 
 
