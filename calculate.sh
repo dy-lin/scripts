@@ -122,7 +122,7 @@ fi
 number=true
 for num in $(cat $file)
 do
-	if [[ "$num" != ?(-)+([0-9])?(.)*([0-9]) ]]
+	if [[ "$num" != ?(-)+([0-9])?(.)*([0-9]) && "$num" != *e?(-)* ]]
 	then
 		number=false
 		break
