@@ -3,7 +3,8 @@
 # plot the MA plots
 
 # Variables to be modified based on conditions
-metadata<-"/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
+# metadata<-"/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
+metadata <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/samples_stonecell.csv"
 kallisto_dir<-"/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
 specific_dir<-"annotated_transcripts/replicates"
 tx2gene_dict<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
@@ -39,6 +40,7 @@ library(ggrepel)
 library(dplyr)
 library(rhdf5)
 library(DESeq2)
+library(stringr)
 
 # load METADATA file
 # At least two columns, 'sample' and 'treatment'
@@ -61,17 +63,17 @@ comparisons <- resultsNames(dds)
 
 for (i in comparisons[-1]) {
     res <- results(dds, name=i)
-    condition <- paste(toupper(substr(strsplit(i,"_")[[1]][2],1,1)),
-                       substr(strsplit(i,"_")[[1]][2],2,nchar(strsplit(i,"_")[[1]][1])), 
+    # Remove "treatment_", and then split by "_vs_" to get conditions
+    # Then grab first letter to capitalize, and then paste with the rest of the word
+    condition <- paste(toupper(substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1],1,1)),
+                       substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1],2,nchar(strsplit(i,"_")[[1]][1])), 
                        sep = "")
-    control <- paste(toupper(substr(strsplit(i,"_")[[1]][4],1,1)),
-                     substr(strsplit(i,"_")[[1]][4],2,nchar(strsplit(i,"_")[[1]][1])), 
+    control <- paste(toupper(substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],1,1)),
+                     substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],2,nchar(strsplit(i,"_")[[1]][1])), 
                      sep = "")
-    
-    vs <- strsplit(i,"_")[[1]][3]
-    title=paste("Treatment:",condition,vs,control)
+    title=paste("Treatment:",condition,"vs",control)
     # subtitle=paste("\nred: padj <", padj)
-    png(filename = paste(condition,vs,control, outfile,sep="_"), width=2560, height=1440, pointsize=18, units="px")
+    png(filename = paste(condition,"vs",control, outfile,sep="_"), width=2560, height=1440, pointsize=18, units="px")
     par(mar=c(5, 5, 4, 2) + 0.1)
     plotMA(res, main=title, alpha=padj, cex.lab=2, cex.axis=2, cex.main=2, cex=1)
     legend("topright", c(paste("padj <",padj), paste("padj >=",padj)), col= c("red", "black"), pch=20, cex=1.5)
