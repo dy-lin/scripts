@@ -41,7 +41,7 @@ for file in $@
 do
 	if [[ -e "$file" ]]
 	then
-		newfile=${file%.*}.collapsed.tsv
+		newfile=${file%.*}.collapsed.${filetype}
 		# Grab first column and get unique entries to iterate over.
 		if [[  "$header" = true ]]
 		then
