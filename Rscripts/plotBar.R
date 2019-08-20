@@ -1,8 +1,8 @@
 #!/usr/bin/env Rscript
 
 # plot distribution of p-values (reg, and adjusted)
-# infile <- "/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto/PG29_summary.csv"
-infile <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_summary.csv"
+infile <- "/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto/PG29_summary.csv"
+# infile <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_summary.csv"
 outfile <- "test.png"
 
 library(ggplot2)
@@ -11,6 +11,7 @@ library(dplyr)
 library(gridExtra)
 library(grid)
 
+
 axisfont <- 14
 labelfont <- 10
 allfont <- 18
@@ -18,7 +19,9 @@ allfont <- 18
 summary <- read.csv(infile, header = T, sep=",")
 
 TPM_cutoff <- 1
+
 # Round all values < 1 TPM to 0, and round to one decimal place
+
 summary <- summary %>% mutate(TPM_ge1 = ifelse(TPM>TPM_cutoff,TPM,0)) %>% mutate_at(vars(TPM_ge1), funs(round(., 1)))
 
 num <- length(unique(summary$Condition))
