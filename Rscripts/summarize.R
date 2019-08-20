@@ -12,6 +12,8 @@ treatment <- "control"
 
 df <- read.csv(infile, header = TRUE, sep="\t")
 
+defensins <- c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
+
 grouped <- group_by(df,target_id)
 summarised <- summarise(grouped, sum1=sum(tpm), sum2=sum(tpm.1), sum3=sum(tpm.2), sum4=sum(tpm.3))
 
@@ -60,7 +62,8 @@ if (num_reps ==1 ) {
 }
 colnames(df_avg) <- unique(samples$treatment)
 df_avg$gene <- rownames(df)
-df_avg <- df_avg[,c(4,1,2,3)]
+rownames(df_avg) <- rownames(df)
+df_avg <- df_avg[defensins,c(4,1,2,3)]
 write.table(df_avg, file=file.path(kallisto_dir,"summarized.csv"), sep=",",row.names = FALSE, quote = FALSE)
 
 
