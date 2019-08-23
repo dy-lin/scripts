@@ -58,9 +58,6 @@ names(files) <- samples$sample
 tx2gene <- read.csv(tx2gene_dict)
 txi.kallisto <- tximport(files, type="kallisto", tx2gene=tx2gene)
 
-names(files) <- samples$sample
-tx2gene <- read.csv(tx2gene_dict)
-txi.kallisto <- tximport(files, type="kallisto", tx2gene=tx2gene)
 df <- as.data.frame(txi.kallisto$abundance)
 
 if (num_reps > 1 && num_treatments == 2) {
@@ -79,7 +76,7 @@ if (num_reps ==1 ) {
 }
 colnames(df_avg) <- unique(samples$treatment)
 df_avg$gene <- rownames(df)
-df_avg <- df_avg[,c(4,1,2,3)]
+df_avg <- df_avg[,c(num_treatments+1,1:num_treatments)]
 
 # flipped <- as.data.frame(df_avg[defensins,] %>% t)[-1,]
 # flipped_upset <- flipped
@@ -89,6 +86,6 @@ flipped_upset$gene <- as.factor(flipped_upset$gene)
 flipped_upset[,-1][flipped_upset[,-1] >= 1] <-1
 flipped_upset[,-1][flipped_upset[,-1] < 1] <-0
 
-upset(flipped_upset, nsets=num_treatments, text.scale=2)
-
-
+png(filename = outfile, width=2560, height=1440, pointsize=18, units="px")
+upset(flipped_upset, nsets=num_treatments, text.scale=4, point.size = 8, line.size=2)
+dev.off()
