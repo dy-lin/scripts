@@ -12,7 +12,7 @@ labelfont <- 8
 
 vjust_label <- 1.5
 infile <- "/projects/btl/scratch/dlin/spruce/defensins/defensins.csv"
-outfile <- "test.png"
+outfile <- "defensins.png"
 
 AMP <- "Defensin"
 title <- paste(AMP, "Genes in Spruce")

@@ -3,25 +3,64 @@
 # plot the volcano plots
 
 # Variables to be modified based on conditions
-metadata<-"/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
-kallisto_dir<-"/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
-specific_dir<-"annotated_transcripts/replicates"
-tx2gene_dict<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
-outfile<-"test.png"
 
-# Modify based on genotype defensins
-defensins<-c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
+# load METADATA file
+# At least two columns, 'sample' and 'treatment'
+
+## PG29
+# metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples.csv"
+# samples <- read.csv(metadata, header = TRUE, sep=",")
+# kallisto_dir<-"/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
+# specific_dir<-"annotated_transcripts"
+# files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
+# tx2gene_dict<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/deseq/tx2gene.csv"
+# defensins <- c("ABT39_00024884", "ABT39_00024885", "ABT39_00024887", "ABT39_00102286", "ABT39_00108568", "ABT39_00122613")
+# reads <- ""
+
+## Q903
+# metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
+# metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_stonecell.csv"
+# samples <- read.csv(metadata, header = TRUE, sep=",")
+# files <- file.path(kallisto_dir,samples$treatment, specific_dir, samples$sample, "abundance.h5")
+# kallisto_dir <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
+# specific_dir <- "annotated_transcripts/replicates"
+# tx2gene_dict<- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
+# defensins <- c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
+# reads <- ""
+
+## WS77111
+metadata <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/samples.csv"
+samples <- read.csv(metadata, header = TRUE, sep=",")
+kallisto_dir<-"/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
+specific_dir<-"annotated_transcripts"
+files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
+tx2gene_dict <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/deseq/tx2gene.csv"
+defensins <- c("DB47_00018419",
+               "DB47_00018420",
+               "DB47_00018421",
+               "DB47_00018422",
+               "DB47_00018423",
+               "DB47_00018424",
+               "DB47_00028544",
+               "DB47_00044066",
+               "DB47_00073581",
+               "DB47_00073614",
+               "DB47_00080438")
+reads <- "(using PG29 RNAseq reads)"
+
+outfile<-"volcano.png"
 
 # Default font sizes
-axisfont<-10
-labelfont<-3
-allfont<-12
+axisfont <- 14
+labelfont <- 10
+allfont <- 18
 
 # padj threshold default, can be modified
 padj_cutoff<-0.05
 
 # lfc threshold default, can be modified
-lfc<-c(-1,1)
+lfc_val <-1
+lfc <- c(-lfc_val, lfc_val)
 
 # number of replicates default, can be modified
 num_reps<-4
@@ -47,13 +86,9 @@ library(ggrepel)
 library(dplyr)
 library(rhdf5)
 library(DESeq2)
-
-# load METADATA file
-# At least two columns, 'sample' and 'treatment'
-samples <- read.csv(metadata, header = TRUE, sep=",")
+# library(stringr)
 
 
-files <- file.path(kallisto_dir,samples$treatment, specific_dir, samples$sample, "abundance.h5")
 names(files) <- samples$sample
 tx2gene <- read.csv(tx2gene_dict)
 txi.kallisto <- tximport(files, type="kallisto", tx2gene=tx2gene)
@@ -69,16 +104,18 @@ for (i in comparisons[-1]) {
   res <- results(dds, name=i)
   # for each condition vs control, plot a volcano plot
   # convert to dataframe
-
-  condition <- paste(toupper(substr(strsplit(i,"_")[[1]][2],1,1)),
-                     substr(strsplit(i,"_")[[1]][2],2,nchar(strsplit(i,"_")[[1]][1])), 
-                     sep = "")
-  control <- paste(toupper(substr(strsplit(i,"_")[[1]][4],1,1)),
-                   substr(strsplit(i,"_")[[1]][4],2,nchar(strsplit(i,"_")[[1]][1])), 
-                   sep = "")
   
-  vs <- strsplit(i,"_")[[1]][3]
-  title=paste(condition,vs,control)
+  condition <- paste(toupper(substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1],1,1)),
+                     substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1],2,nchar(strsplit(i,"_vs_")[[1]][1])), 
+                     sep = "")
+  control <- paste(toupper(substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],1,1)),
+                   substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],2,nchar(strsplit(i,"_vs_")[[1]][1])), 
+                   sep = "")
+  vs <- "vs"
+  title=paste(condition,vs,control,reads)
+  
+  condition <- strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1]
+  control <- strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2]
   
   df <- as.data.frame(res)
   
@@ -101,7 +138,9 @@ for (i in comparisons[-1]) {
   xmin <- min(defensin_subset$log2FoldChange) - 0.25
   
   ylimit <- c(0,ymax)
-  xlimit <- c(xmin, xmax)
+#  xlimit <- c(xmin, xmax)
+#  xlimit <- c(-5,5)
+  xlimit <- c(-1*xmax, xmax)
   
   # Plot discrete
   ggplot(df_log, aes(x=log2FoldChange, y=logp, color=padjcat)) + 
@@ -140,12 +179,12 @@ for (i in comparisons[-1]) {
                  alpha=0.1) + 
       geom_point(data=defensin_subset,
                  alpha=1, 
-                 color="green4") +
+                 color="red") +
       geom_text_repel(label=ifelse(is.element(rownames(df_log),defensins),rownames(df_log),""), 
                       size=labelfont, 
  #                     vjust=vjust_label, 
  #                     hjust=hjust_label, 
-                      color="green4") + 
+                      color="red") + 
       geom_vline(xintercept=lfc,
                  linetype="dotted") + 
       theme(text = element_text(size=allfont),
@@ -164,4 +203,7 @@ for (i in comparisons[-1]) {
          height=9, 
         # units="cm"
          )
+  # make one without a period
+  padj_mod <- gsub("[.]","",as.character(padj_cutoff)) 
+  write.table(filter(df_log,abs(log2FoldChange) > lfc_val & df_log$padj < padj_cutoff)$gene, file=file.path(kallisto_dir,condition,specific_dir,paste("genes.p",padj_mod,".lfc",lfc_val,".txt",sep="")), quote = FALSE)
 }

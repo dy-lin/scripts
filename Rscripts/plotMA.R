@@ -2,24 +2,69 @@
 
 # plot the MA plots
 
-# Variables to be modified based on conditions
-# metadata<-"/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
-metadata <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/samples_stonecell.csv"
-kallisto_dir<-"/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
-specific_dir<-"annotated_transcripts/replicates"
-tx2gene_dict<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
-outfile<-"test.png"
+# load packages
+library(tximport)
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+library(rhdf5)
+library(DESeq2)
+library(stringr)
 
-# Modify based on genotype defensins
-defensins<-c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
+# Variables to be modified based on conditions
+
+# load METADATA file
+# At least two columns, 'sample' and 'treatment'
+
+## PG29
+# metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples.csv"
+# samples <- read.csv(metadata, header = TRUE, sep=",")
+# kallisto_dir<-"/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
+# specific_dir<-"annotated_transcripts"
+# files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
+# tx2gene_dict<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/deseq/tx2gene.csv"
+# defensins <- c("ABT39_00024884", "ABT39_00024885", "ABT39_00024887", "ABT39_00102286", "ABT39_00108568", "ABT39_00122613")
+# reads <- ""
+
+## Q903
+# metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
+# metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_stonecell.csv"
+# samples <- read.csv(metadata, header = TRUE, sep=",")
+# files <- file.path(kallisto_dir,samples$treatment, specific_dir, samples$sample, "abundance.h5")
+# kallisto_dir <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
+# specific_dir <- "annotated_transcripts/replicates"
+# tx2gene_dict<- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
+# defensins <- c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
+# reads <- ""
+
+## WS77111
+metadata <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/samples.csv"
+samples <- read.csv(metadata, header = TRUE, sep=",")
+kallisto_dir<-"/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
+specific_dir<-"annotated_transcripts"
+files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
+tx2gene_dict <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/deseq/tx2gene.csv"
+defensins <- c("DB47_00018419",
+               "DB47_00018420",
+               "DB47_00018421",
+               "DB47_00018422",
+               "DB47_00018423",
+               "DB47_00018424",
+               "DB47_00028544",
+               "DB47_00044066",
+               "DB47_00073581",
+               "DB47_00073614",
+               "DB47_00080438")
+reads <- "(using PG29 RNAseq reads)"
 
 # Default font sizes
-axisfont<-10
-labelfont<-3
-allfont<-12
+axisfont <- 14
+labelfont <- 10
+allfont <- 18
 
 # number of replicates default, can be modified
-num_reps<-4
+num_treatments=length(unique(samples$treatment))
+num_reps=nrow(samples)/num_treatments
 
 padj<-0.05
 # If any commented out variables are used, remember to add them to the ggplot() line
@@ -32,22 +77,6 @@ padj<-0.05
 vjust_label<-0.5
 hjust_label<-0
 
-
-# load packages
-library(tximport)
-library(ggplot2)
-library(ggrepel)
-library(dplyr)
-library(rhdf5)
-library(DESeq2)
-library(stringr)
-
-# load METADATA file
-# At least two columns, 'sample' and 'treatment'
-samples <- read.csv(metadata, header = TRUE, sep=",")
-
-
-files <- file.path(kallisto_dir,samples$treatment, specific_dir, samples$sample, "abundance.h5")
 names(files) <- samples$sample
 tx2gene <- read.csv(tx2gene_dict)
 txi.kallisto <- tximport(files, type="kallisto", tx2gene=tx2gene)
@@ -72,10 +101,22 @@ for (i in comparisons[-1]) {
                      substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],2,nchar(strsplit(i,"_")[[1]][1])), 
                      sep = "")
     title=paste("Treatment:",condition,"vs",control)
+    
+    condition <- strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1]
+    control <- strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2]
+    
     # subtitle=paste("\nred: padj <", padj)
     png(filename = paste(condition,"vs",control, outfile,sep="_"), width=2560, height=1440, pointsize=18, units="px")
     par(mar=c(5, 5, 4, 2) + 0.1)
-    plotMA(res, main=title, alpha=padj, cex.lab=2, cex.axis=2, cex.main=2, cex=1)
+    plotMA(res, 
+           main=title, 
+           alpha=padj, 
+           cex.lab=2, 
+           cex.axis=2, 
+           cex.main=2, 
+           cex=1, 
+           sub=reads
+           )
     legend("topright", c(paste("padj <",padj), paste("padj >=",padj)), col= c("red", "black"), pch=20, cex=1.5)
     dev.off()
                                                  

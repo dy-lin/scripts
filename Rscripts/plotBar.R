@@ -1,9 +1,20 @@
 #!/usr/bin/env Rscript
 
 # plot distribution of p-values (reg, and adjusted)
-infile <- "/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto/PG29_summary.csv"
-# infile <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_summary.csv"
-outfile <- "test.png"
+
+## Q903
+# infile <- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/final_summary.csv"
+# title <- "Defensin Expression in Sitka Spruce"
+
+## PG29
+# infile <- "/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/final_summary.csv"
+# title <- "Defensin Expression in Interior Spruce"
+
+## WS77111
+infile <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/final_summary.csv"
+title <- "Defensin Expression in White Spruce (using Interior Spruce RNAseq reads)"
+
+outfile <- "bar.png"
 
 library(ggplot2)
 library(ggrepel)
@@ -30,10 +41,10 @@ if (num > 1 ) {
     
     
     ylabel <- "Transcripts per Million (TPM)"
-    title <- "Defensin Expression in Sitka Spruce"
     subtitle <- paste("TPM >=", TPM_cutoff)
     
-    ylimit <- c(0,60)
+    ymax <- max(summary$TPM_ge1) + 5
+    ylimit <- c(0,ymax)
     
     angle <- 0
     # vjust 
@@ -65,7 +76,7 @@ if (num > 1 ) {
         } else {
             plots[[count]] <- ggplot(data=subset, 
                         aes(fill=Gene, 
-                            x=Treatment, 
+                            x=Treatment,
                             y=TPM_ge1)) + 
                 geom_bar(width=0.5 ,
                          position=position_dodge(0.5),
@@ -94,8 +105,7 @@ if (num > 1 ) {
     
     xlabel <- "Treatments"
     ylabel <- "Transcripts per Million (TPM)"
-    title <- "Defensin Expression in Sitka Spruce Treatments"
-    subtitle <- paste("TPM >=", TPM_cutoff)
+    subtitle <- paste("TPM >=", TPM_cutoff, reads)
     
     angle <- 20
     hjust <- 1
@@ -129,5 +139,3 @@ if (num > 1 ) {
            device="png")
     
 }
-
-
