@@ -57,7 +57,7 @@ outfile<-"p-val-hist.png"
 
 # Default font sizes
 axisfont <- 14
-labelfont <- 10
+labelfont <- 5
 allfont <- 18
 
 names(files) <- samples$sample
@@ -72,15 +72,30 @@ dds <- DESeq(dds)
 comparisons <- resultsNames(dds)
 
 for (i in comparisons[-1]) {
-    condition <- paste(toupper(substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1],1,1)),
-                       substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1],2,nchar(strsplit(i,"_")[[1]][1])), 
+    condition <- paste(toupper(substr(unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[1],1,1)),
+                       substr(unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[1],2,nchar(unlist(strsplit(i,"_vs_"))[1])), 
                        sep = "")
-    control <- paste(toupper(substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],1,1)),
-                     substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],2,nchar(strsplit(i,"_")[[1]][1])), 
+    control <- paste(toupper(substr(unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[2],1,1)),
+                     substr(unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[2],2,nchar(unlist(strsplit(i,"_vs_"))[1])), 
                      sep = "")
-    
     vs <- "vs"
+    
+    full <- unlist(strsplit(condition,"_"))
+    if (length(na.omit(full)) != 1) {
+        word1 <- full[1]
+        word2 <- full[2]
+        word2 <- paste(toupper(substr(word2,1,1)),substr(word2,2,nchar(word2)),sep="")
+        condition <- paste(word1, word2)
+        
+    } else {
+        condition <- gsub("_", " ", condition)
+    }
+    
     title=paste(condition,vs,control)
+    
+    condition <- unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[1]
+    control <- unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[2]
+    
     res <- results(dds, name=i)
     png(filename = paste(condition,vs,control, outfile,sep="_"), width=2560, height=1440, pointsize=18, units="px")
     par(mfrow = c(2, 1))
@@ -89,13 +104,23 @@ for (i in comparisons[-1]) {
          col="grey", 
          main = paste("P-values of",title), 
          xlab = "P-values",
-         sub = reads
+         sub = reads,
+         cex.lab=2, 
+         cex.axis=2, 
+         cex.main=2, 
+         cex=1
     )
     padj <- hist(res$padj, 
                  breaks=20, 
                  col="grey", 
                  main = paste("Adjusted P-values of", title), 
-                 xlab = "Adjusted P-values")
+                 xlab = "Adjusted P-values",
+                 sub = reads,
+                 cex.lab=2, 
+                 cex.axis=2, 
+                 cex.main=2, 
+                 cex=1
+                 )
     dev.off()
 }
 

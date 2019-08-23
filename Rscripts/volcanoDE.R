@@ -8,14 +8,14 @@
 # At least two columns, 'sample' and 'treatment'
 
 ## PG29
-# metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples.csv"
-# samples <- read.csv(metadata, header = TRUE, sep=",")
-# kallisto_dir<-"/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
-# specific_dir<-"annotated_transcripts"
-# files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
-# tx2gene_dict<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/deseq/tx2gene.csv"
-# defensins <- c("ABT39_00024884", "ABT39_00024885", "ABT39_00024887", "ABT39_00102286", "ABT39_00108568", "ABT39_00122613")
-# reads <- ""
+metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples.csv"
+samples <- read.csv(metadata, header = TRUE, sep=",")
+kallisto_dir<-"/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
+specific_dir<-"annotated_transcripts"
+files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
+tx2gene_dict<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/deseq/tx2gene.csv"
+defensins <- c("ABT39_00024884", "ABT39_00024885", "ABT39_00024887", "ABT39_00102286", "ABT39_00108568", "ABT39_00122613")
+reads <- ""
 
 ## Q903
 # metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
@@ -29,30 +29,30 @@
 # reads <- ""
 
 ## WS77111
-metadata <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/samples.csv"
-samples <- read.csv(metadata, header = TRUE, sep=",")
-kallisto_dir<-"/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
-specific_dir<-"annotated_transcripts"
-files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
-tx2gene_dict <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/deseq/tx2gene.csv"
-defensins <- c("DB47_00018419",
-               "DB47_00018420",
-               "DB47_00018421",
-               "DB47_00018422",
-               "DB47_00018423",
-               "DB47_00018424",
-               "DB47_00028544",
-               "DB47_00044066",
-               "DB47_00073581",
-               "DB47_00073614",
-               "DB47_00080438")
-reads <- "(using PG29 RNAseq reads)"
+# metadata <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/samples.csv"
+# samples <- read.csv(metadata, header = TRUE, sep=",")
+# kallisto_dir<-"/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
+# specific_dir<-"annotated_transcripts"
+# files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
+# tx2gene_dict <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/deseq/tx2gene.csv"
+# defensins <- c("DB47_00018419",
+#                "DB47_00018420",
+#                "DB47_00018421",
+#                "DB47_00018422",
+#                "DB47_00018423",
+#                "DB47_00018424",
+#                "DB47_00028544",
+#                "DB47_00044066",
+#                "DB47_00073581",
+#                "DB47_00073614",
+#                "DB47_00080438")
+# reads <- "(using PG29 RNAseq reads)"
 
 outfile<-"volcano.png"
 
 # Default font sizes
 axisfont <- 14
-labelfont <- 10
+labelfont <- 5
 allfont <- 18
 
 # padj threshold default, can be modified
@@ -105,17 +105,29 @@ for (i in comparisons[-1]) {
   # for each condition vs control, plot a volcano plot
   # convert to dataframe
   
-  condition <- paste(toupper(substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1],1,1)),
-                     substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1],2,nchar(strsplit(i,"_vs_")[[1]][1])), 
+  condition <- paste(toupper(substr(unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[1],1,1)),
+                     substr(unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[1],2,nchar(unlist(strsplit(i,"_vs_"))[1])), 
                      sep = "")
-  control <- paste(toupper(substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],1,1)),
-                   substr(strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2],2,nchar(strsplit(i,"_vs_")[[1]][1])), 
+  control <- paste(toupper(substr(unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[2],1,1)),
+                   substr(unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[2],2,nchar(unlist(strsplit(i,"_vs_"))[1])), 
                    sep = "")
   vs <- "vs"
+  
+  full <- unlist(strsplit(condition,"_"))
+  if (length(na.omit(full)) != 1) {
+    word1 <- full[1]
+    word2 <- full[2]
+    word2 <- paste(toupper(substr(word2,1,1)),substr(word2,2,nchar(word2)),sep="")
+    condition <- paste(word1, word2)
+    
+  } else {
+    condition <- gsub("_", " ", condition)
+  }
+  
   title=paste(condition,vs,control,reads)
   
-  condition <- strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][1]
-  control <- strsplit(str_remove(i,"treatment_"),"_vs_")[[1]][2]
+  condition <- unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[1]
+  control <- unlist(strsplit(str_remove(i,"treatment_"),"_vs_"))[2]
   
   df <- as.data.frame(res)
   

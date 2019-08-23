@@ -49,7 +49,7 @@ reads <- "(using Interior Spruce RNAseq reads)"
 outfile<-"scatter.png"
 
 axisfont <- 14
-labelfont <- 10
+labelfont <- 5
 allfont <- 18
 
 xlabel<-"Bark"
