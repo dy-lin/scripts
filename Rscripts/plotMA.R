@@ -211,6 +211,17 @@ for (i in comparisons[-1]) {
     } else {
         condition <- gsub("_", " ", condition)
     }
+    
+    full <- unlist(strsplit(control,"_"))
+    if (length(na.omit(full)) != 1) {
+        word1 <- full[1]
+        word2 <- full[2]
+        word2 <- paste(toupper(substr(word2,1,1)),substr(word2,2,nchar(word2)),sep="")
+        control <- paste(word1, word2)
+        
+    } else {
+        control <- gsub("_", " ", control)
+    }
 
     title=paste(condition,vs,control)
     
