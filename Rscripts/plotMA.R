@@ -16,46 +16,144 @@ library(stringr)
 # load METADATA file
 # At least two columns, 'sample' and 'treatment'
 
-# PG29
-# metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples.csv"
-# samples <- read.csv(metadata, header = TRUE, sep=",")
-# kallisto_dir<-"/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
-# specific_dir<-"annotated_transcripts"
-# files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
-# tx2gene_dict<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/deseq/tx2gene.csv"
-# defensins <- c("ABT39_00024884", "ABT39_00024885", "ABT39_00024887", "ABT39_00102286", "ABT39_00108568", "ABT39_00122613")
-# reads <- ""
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) == 2) {
+    transcriptome <- args[1]
+    ref <- args[2]
+} else {
+    stop("USAGE: plotMA.R <Transcriptome Genotype> <Reads Treatment>")
+}
 
-# # Q903
-# metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
-# metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_stonecell.csv"
-# samples <- read.csv(metadata, header = TRUE, sep=",")
-# files <- file.path(kallisto_dir,samples$treatment, specific_dir, samples$sample, "abundance.h5")
-# kallisto_dir <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
-# specific_dir <- "annotated_transcripts/replicates"
-# tx2gene_dict<- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
-# defensins <- c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
-# reads <- ""
+# load METADATA file
+# At least two columns, 'sample' and 'treatment'
 
-# # WS77111
-metadata <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/samples.csv"
-samples <- read.csv(metadata, header = TRUE, sep=",")
-kallisto_dir<-"/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
-specific_dir<-"annotated_transcripts"
-files <- file.path(kallisto_dir,samples$treatment, specific_dir, "abundance.h5")
-tx2gene_dict <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/deseq/tx2gene.csv"
-defensins <- c("DB47_00018419",
-               "DB47_00018420",
-               "DB47_00018421",
-               "DB47_00018422",
-               "DB47_00018423",
-               "DB47_00018424",
-               "DB47_00028544",
-               "DB47_00044066",
-               "DB47_00073581",
-               "DB47_00073614",
-               "DB47_00080438")
-reads <- "(using PG29 RNAseq reads)"
+if (transcriptome == "PG29") {
+    if (ref == "tissue") {
+        metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples_tissue.csv"
+        samples <- read.csv(metadata, header = TRUE, sep=",")
+        kallisto_dir<-"/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
+        specific_dir<-"annotated_transcripts"
+        files <- file.path(kallisto_dir,samples$treatment,specific_dir,"abundance.h5")
+        tx2gene_dict<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("ABT39_00024884", "ABT39_00024885", "ABT39_00024887", "ABT39_00102286", "ABT39_00108568", "ABT39_00122613")
+        reads <- "(using PG29 RNAseq reads)"
+    } else if (ref == "wpw") {
+        metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples_wpw.csv"
+        samples <- read.csv(metadata, header = TRUE, sep=",")
+        kallisto_dir<-"/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
+        specific_dir<-"annotated_transcripts/replicates"
+        files <- file.path(kallisto_dir,samples$treatment,specific_dir,samples$sample,"abundance.h5")
+        tx2gene_dict<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("ABT39_00024884", "ABT39_00024885", "ABT39_00024887", "ABT39_00102286", "ABT39_00108568", "ABT39_00122613")
+        reads <- "(using Q903 RNAseq reads)"
+    } else if (ref == "stonecell") {
+        metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples_stonecell.csv"
+        samples <- read.csv(metadata, header = TRUE, sep=",")
+        kallisto_dir<-"/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
+        specific_dir<-"annotated_transcripts/replicates"
+        files <- file.path(kallisto_dir,samples$treatment,specific_dir,samples$sample,"abundance.h5")
+        tx2gene_dict<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("ABT39_00024884", "ABT39_00024885", "ABT39_00024887", "ABT39_00102286", "ABT39_00108568", "ABT39_00122613")
+        reads <- "(using Q903 RNAseq reads)"
+    } else {
+        stop("Invalid reads.")
+    }
+} else if (transcriptome == "Q903") {
+    if (ref == "wpw") {
+        metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_wpw.csv"
+        samples <- read.csv(metadata, header = TRUE, sep=",")
+        kallisto_dir <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
+        specific_dir <- "annotated_transcripts/replicates"
+        files <- file.path(kallisto_dir,samples$treatment,specific_dir,samples$sample,"abundance.h5")
+        tx2gene_dict<- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
+        reads <- "(using Q903 RNAseq reads)"
+        
+    } else if (ref == "stonecell") {
+        metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_stonecell.csv"
+        samples <- read.csv(metadata, header = TRUE, sep=",")
+        kallisto_dir <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
+        specific_dir <- "annotated_transcripts/replicates"
+        files <- file.path(kallisto_dir,samples$treatment,specific_dir,samples$sample,"abundance.h5")
+        tx2gene_dict<- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
+        reads <- "(using Q903 RNAseq reads)"
+    } else if (ref == "tissue") {
+        metadata<-"/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/samples_tissue.csv"
+        samples <- read.csv(metadata, header = TRUE, sep=",")
+        kallisto_dir <- "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
+        specific_dir <- "annotated_transcripts"
+        files <- file.path(kallisto_dir,samples$treatment,specific_dir,"abundance.h5")
+        tx2gene_dict<- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("E0M31_00027086", "E0M31_00027087", "E0M31_00055415", "E0M31_00093276", "E0M31_00093277")
+        reads <- "(using PG29 RNAseq reads)"
+    } else {
+        stop("Invalid reads.")
+    }
+} else if (transcriptome == "WS77111") {
+    if (ref == "tissue") {
+        metadata <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/samples_tissue.csv"
+        samples <- read.csv(metadata, header = TRUE, sep=",")
+        kallisto_dir<-"/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
+        specific_dir<-"annotated_transcripts"
+        files <- file.path(kallisto_dir,samples$treatment,specific_dir,"abundance.h5")
+        tx2gene_dict <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("DB47_00018419",
+                       "DB47_00018420",
+                       "DB47_00018421",
+                       "DB47_00018422",
+                       "DB47_00018423",
+                       "DB47_00018424",
+                       "DB47_00028544",
+                       "DB47_00044066",
+                       "DB47_00073581",
+                       "DB47_00073614",
+                       "DB47_00080438")
+        reads <- "(using PG29 RNAseq reads)"
+    } else if (ref == "wpw") {
+        metadata <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/samples_wpw.csv"
+        samples <- read.csv(metadata,header = TRUE, sep = ",")
+        kallisto_dir <- "/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
+        specific_dir <- "annotated_transcripts/replicates"
+        files <- file.path(kallisto_dir, samples$treatment,specific_dir, samples$sample, "abundance.h5")
+        tx2gene_dict <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("DB47_00018419",
+                       "DB47_00018420",
+                       "DB47_00018421",
+                       "DB47_00018422",
+                       "DB47_00018423",
+                       "DB47_00018424",
+                       "DB47_00028544",
+                       "DB47_00044066",
+                       "DB47_00073581",
+                       "DB47_00073614",
+                       "DB47_00080438")
+        reads <- "(using Q903 RNAseq reads)"
+    } else if (ref == "stonecell") {
+        metadata <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/samples_stonecell.csv"
+        samples <- read.csv(metadata,header = TRUE, sep = ",")
+        kallisto_dir <- "/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
+        specific_dir <- "annotated_transcripts/replicates"
+        files <- file.path(kallisto_dir, samples$treatment,specific_dir, samples$sample, "abundance.h5")
+        tx2gene_dict <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/deseq/tx2gene.csv"
+        defensins <- c("DB47_00018419",
+                       "DB47_00018420",
+                       "DB47_00018421",
+                       "DB47_00018422",
+                       "DB47_00018423",
+                       "DB47_00018424",
+                       "DB47_00028544",
+                       "DB47_00044066",
+                       "DB47_00073581",
+                       "DB47_00073614",
+                       "DB47_00080438")
+        reads <- "(using Q903 RNAseq reads)"
+    } else {
+        stop("Invalid reads.")
+    }
+} else {
+    stop("Invalid transcriptome.")
+}
 
 outfile <- "MAplot.png"
 # Default font sizes

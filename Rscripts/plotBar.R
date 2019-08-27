@@ -2,17 +2,51 @@
 
 # plot distribution of p-values (reg, and adjusted)
 
-## Q903
-# infile <- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/final_summary.csv"
-# title <- "Defensin Expression in Sitka Spruce"
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) == 1) {
+  genotype <- args[1]
+  ref <- genotype
+} else if (length(args) == 2) {
+  genotype <- args[1]
+  ref <- args[2]
+} else {
+  stop("USAGE: plotBar.R <Transcriptome Genotype> <Reads Genotype>")
+}
 
-## PG29
-# infile <- "/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/final_summary.csv"
-# title <- "Defensin Expression in Interior Spruce"
 
-## WS77111
-infile <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/final_summary.csv"
-title <- "Defensin Expression in White Spruce (using Interior Spruce RNAseq reads)"
+if (genotype == "Q903") {
+  infile <- "/projects/spruceup_scratch/psitchensis/Q903/annotation/amp/kallisto/final_summary.csv"
+  title <- "Defensin Expression in Sitka Spruce"
+  if (ref == "Q903") {
+    reads <- "(using Q903 RNAseq reads)"
+  } else if (ref == "PG29") {
+    reads <- "(using PG29 RNAseq reads)"
+  } else {
+    stop("Invalid reads.")
+  }
+} else if (genotype == "PG29") {
+  infile <- "/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/final_summary.csv"
+  title <- "Defensin Expression in Interior Spruce"
+  if (ref == "Q903") {
+    reads <- "(using Q903 RNAseq reads)"
+  } else if (ref == "PG29") {
+    reads <- "(using PG29 RNAseq reads)"
+  } else {
+    stop("Invalid reads.")
+  }
+} else if (genotype == "WS77111") {
+  infile <- "/projects/spruceup_scratch/pglauca/WS77111/annotation/amp/kallisto/final_summary.csv"
+  title <- "Defensin Expression in White Spruce"
+  if (ref == "Q903") {
+    reads <- "(using Q903 RNAseq reads)"
+  } else if (ref == "PG29") {
+    reads <- "(using PG29 RNAseq reads)"
+  } else {
+    stop("Invalid reads.")
+  }
+} else {
+  stop("Invalid genotype.")
+}
 
 outfile <- "bar.png"
 
@@ -41,7 +75,7 @@ if (num > 1 ) {
     
     
     ylabel <- "Transcripts per Million (TPM)"
-    subtitle <- paste("TPM >=", TPM_cutoff)
+    subtitle <- paste("TPM >=", TPM_cutoff, reads)
     
     ymax <- max(summary$TPM_ge1) + 5
     ylimit <- c(0,ymax)
@@ -96,7 +130,7 @@ if (num > 1 ) {
         count <- count + 1
     }
     combined <- do.call(grid.arrange,c(plots,ncol=2))
-    ggsave(plot = combined, outfile, 
+    ggsave(plot = combined, paste(genotype,ref,"reads",outfile,sep="_"), 
            width=16, 
            height=9, 
            dpi=300, 
@@ -132,7 +166,7 @@ if (num > 1 ) {
    #                     label=ifelse(summary$TPM_ge1>1, summary$TPM_ge1, ""), 
   #                      size=labelfont)
     
-    ggsave(outfile, 
+    ggsave(paste(genotype,ref,"reads",outfile,sep="_"), 
            width=16, 
            height=9, 
            dpi=300, 
