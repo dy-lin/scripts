@@ -7,20 +7,19 @@ then
 fi
 sum=0
 # If the first argument is a 'key', i.e. NOT a file, then use grep. If it is a file, use wc 
-
 if [[ -e "$1" ]]
 then
 	for file in $@
 	do
 		if [[ -e "$file" ]]
 		then
-			if [[ "$file" == *.gz ]]
+			if [[ "$file" == *.fastq || "$file" == *.fq  ]]
 			then
 				count=$(wc -l $file | awk '{print $1}')
 				temp=$((count/4))
 				echo "$(basename $file): $temp reads"
 				sum=$((sum+temp))
-			elif [[ "$file" == *.fastq || "$file" == *.fq ]]
+			elif [[ "$file" == *.gz  ]]
 			then
 				count=$(pigz -d -c $file | wc -l)
 				temp=$((count/4))
