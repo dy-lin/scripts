@@ -15,6 +15,8 @@ if (length(args) == 2) {
 # load METADATA file
 # At least two columns, 'sample' and 'treatment'
 
+# test
+
 if (transcriptome == "PG29") {
   if (ref == "tissue") {
     metadata<-"/projects/spruceup_scratch/interior_spruce/PG29/annotation/amp/kallisto/samples_tissue.csv"
@@ -151,14 +153,11 @@ labelfont <- 5
 allfont <- 18
 
 # padj threshold default, can be modified
-padj_cutoff<-0.05
+padj_cutoff<-0.001
 
 # lfc threshold default, can be modified
-lfc_val <-1
+lfc_val <-2
 lfc <- c(-lfc_val, lfc_val)
-
-# number of replicates default, can be modified
-num_reps<-4
 
 # Default for this type of plot
 legendtitle<-"adjusted\np-value"
@@ -323,5 +322,6 @@ for (i in comparisons[-1]) {
          )
   # make one without a period
   padj_mod <- gsub("[.]","",as.character(padj_cutoff)) 
-  write.table(filter(df_log,abs(log2FoldChange) > lfc_val & df_log$padj < padj_cutoff)$gene, file=file.path(kallisto_dir,condition,specific_dir,paste("genes.p",padj_mod,".lfc",lfc_val,".txt",sep="")), quote = FALSE)
+  df_log$gene <- rownames(df_log)
+  write.table(filter(df_log,abs(log2FoldChange) > lfc_val & df_log$padj < padj_cutoff)$gene, file=file.path(kallisto_dir,condition,specific_dir,paste("genes.p",padj_mod,".lfc",lfc_val,".txt",sep="")), quote = FALSE,row.names =  FALSE,col.names = FALSE)
 }
