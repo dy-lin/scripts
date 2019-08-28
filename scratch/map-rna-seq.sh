@@ -100,7 +100,7 @@ then
 			then
 
 				echo "Aligning Q903 $t reads to assembled transcriptome..." 1>&2
-				bwa mem -t128 $transciptome_dir/${t}.fa <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.assembly.${t}.${num}.sorted.bam
+				bwa mem -t128 $transcriptome_dir/${t}.fa <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.assembly.${t}.${num}.sorted.bam
 			fi
 			count=$(samtools view -@ 128 -f4 -c $outdir/Q903.assembly.${t}.${num}.sorted.bam)
 			echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
