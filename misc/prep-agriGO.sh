@@ -16,7 +16,11 @@ kallisto_dir=$(echo "$infile" | sed 's/kallisto.\+$/kallisto/')
 specific_dir=$(dirname $infile)
 filename=$(basename $infile ".txt")
 
-awk -F "\t" 'BEGIN{OFS="\t"}{print $1, $14}' $ips | grep 'GO:' > $kallisto_dir/gene-GOterms.tsv
+if [[ ! -e "$kallisto_dir/gene-GOterms.tsv" ]]
+then
+	awk -F "\t" 'BEGIN{OFS="\t"}{print $1, $14}' $ips | grep 'GO:' > $kallisto_dir/gene-GOterms.tsv
+fi
+
 grep -f $infile $kallisto_dir/gene-GOterms.tsv > $specific_dir/${filename}.GOterms.tsv
 
 
