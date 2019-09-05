@@ -182,13 +182,36 @@ case $file in
 		case $spruce in
 			[Ww][Ss]77111 | [Ww][Ss] | 77111)
 				echo "/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/jackhmmer-proteome/defensins/final"
-				;;
+				# since this is a directory, ask to cd to it
+				read -p "Go to this directory? " response
+# 				case $response in
+# 					[Yy]*) cd /projects/spruceup/scratch/pglauca/WS77111/annotation/amp/jackhmmer-proteome/defensins/final
+# 						;;
+# 					[Nn]*) # do nothing
+# 						;;
+# 				esac
+ 				;;
 			[Pp][Gg]29 | [Pp][Gg] | 29)
 				echo "/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/jackhmmer-proteome/defensins/final"
-				;;
+
+				read -p "Go to this directory? " response
+# 				case $response in
+# 					[Yy]*) cd /projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/jackhmmer-proteome/defensins/final
+# 						;;
+# 					[Nn]*) # do nothing
+# 						;;
+# 				esac
+ 				;;
 			[Qq]903 | [Qq] | 903)
 				echo "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/jackhmmer-proteome/defensins/final"
-				;;
+# 				read -p "Go to this directory? " response
+# 				case $response in
+# 					[Yy]*) cd /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/jackhmmer-proteome/defensins/final
+# 						;;
+# 					[Nn]*) # do nothing
+# 						;;
+# 				esac
+			;;
 			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
 				# Preparing for Engelmann files.
 				;;
@@ -204,6 +227,73 @@ case $file in
 				# spruce.sh Se404-851 $file
 				;;
 		esac
+		;;
+	[Kk]allisto|[Kk]all|[Kk]al|[Kk])
+		case $spruce in
+			[Ww][Ss]77111| [Ww][Ss] | 77111)
+				echo "/projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto"
+# 				read -p "Go to this directory? " response
+# 				case $response in
+# 					[Yy]*) cd /projects/spruceup/scratch/pglauca/WS77111/annotation/amp/kallisto
+# 						;;
+# 					[Nn]*) # do nothing
+# 						;;
+# 				esac
+ 				;;
+			[Pp][Gg]29 | [Pp][Gg] | 29)
+				echo "/projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto"
+# 				read -p "Go to this directory? " response
+# 				case $response in
+# 					[Yy]*) cd /projects/spruceup/scratch/interior_spruce/PG29/annotation/amp/kallisto
+# 						;;
+# 					[Nn]*) # do nothing
+# 						;;
+# 				esac
+ 				;;
+			[Qq]903|[Qq]|903)
+				echo "/projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto"
+# 				read -p "Go to this directory? " response
+# 				case $response in
+# 					[Yy]*) cd /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto
+# 						;;
+# 					[Nn]* ) # do nothing
+# 						;;
+# 				esac
+ 				;;
+			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+				# Preparing for Engelmann files
+				;;
+		esac
+		;;
+	[Ii][Pp][Ss]|[Ii]nter[Pp]ro[Ss]can)
+		case $spruce in
+			[Ww][Ss]77111| [Ww][Ss] | 77111)
+				echo "/projects/spruceup_scratch/pglauca/WS77111/annotation/genome-annotation/Maker/InterproScanFuncAnnotation/FourthStepMakerCumulatNonntEditRenamedLongIso/WS77111.all.maker.proteinsLoweAED.renamed.functionAnnotatedFinal.fasta.tsv"
+				;;
+			[Pp][Gg]29 | [Pp][Gg] | 29)
+				echo "/projects/spruceup_scratch/interior_spruce/PG29/annotation/genome-annotation/PG29v5/Maker/InterproScan/ThirdIterationCumulatNonntEditRenamedLongIso/PG29.all.maker.proteinsLoweAED.renamed.functionAnnotatedFinal.fasta.tsv"
+				;;
+			[Qq]903|[Qq]|903)
+				echo "/projects/spruceup_scratch/psitchensis/Q903/annotation/genome-annotation/Maker/InterProScan/ThirdSTepCumulatRenamedLongIso/Q903.all.maker.proteinsLoweAED.renamed.functionAnnotatedFinal.fasta.tsv"
+				;;
+			[Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+				;;
+		esac
+		;;
+	[Gg][Mm][Aa][Pp]\ [Ii][Nn][Dd][Ee][Xx] | [Gg][Mm][Aa][Pp] | [Ii][Nn][Dd][Ee][Xx] | [Ii][Dd][Xx])
+		case $spruce in
+			[Ww][Ss]77111| [Ww][Ss] | 77111)
+				echo "/projects/spruceup/pglauca/WS77111/assemblies/releases/version2/WS77111v2_release/GMAPindex/"
+				;;
+			 [Pp][Gg]29 | [Pp][Gg] | 29)
+				echo "/projects/spruceup/interior_spruce/PG29/assemblies/releases/PG29-v5/PG29-v5_1000plus_GMAP-index/" 
+				 ;;
+			 [Qq]903|[Qq]|903)
+				 echo "/projects/spruceup/psitchensis/Q903/assembly/releases/v0.1beta/gnavigator/Q903_v0.1beta_1000plus-gmap-index-dir/Q903_v0.1beta_1000plus-gmap-index/"
+				 ;;
+			 [Ss][Ee]404-851|[Ss][Ee]|[Ss][Ee]404|404-851|851)
+				 ;;
+		 esac
 		;;
 	[Aa][Ll][Ll])
 		echo -ne "Scaffolds:\t"
