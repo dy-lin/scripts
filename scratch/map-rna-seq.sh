@@ -1,8 +1,24 @@
 #!/bin/bash
 
+PROGRAM=$(basename $0)
+combined=false
+
+while getopts :c opt
+do
+	case $opt in
+		c) combined=true
+			;;
+		\?) echo "$PROGRAM: Invalid option: $OPTARG" 1>&2; exit 1;;
+	esac
+done
+
+shift $((OPTIND-1))
+
 if [[ "$#" -ne 1 ]]
 then
-	echo "USAGE: $(basename $0) <Genotype>" 1>&2
+	echo "USAGE: $(basename $0) [-c] <Genotype>" 1>&2
+	echo "DESCRIPTION: Aligns RNAseq reads to the annotated or assembled transcriptome." 1>&2
+	echo -e "OPTIONS:\n\t-c\tcombine all replicates"
 	exit 1
 fi
 
@@ -76,77 +92,146 @@ then
 	fi
 	for t in $tissues
 	do
-		for num in $(seq 4 2 8)
-		do
+		if [[ "$combined" = false ]]
+		then
+			for num in $(seq 4 2 8)
+			do
+				echo "Counting the total number of reads..." 1>&2
+				total=$(countReads.sh /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R?.fq.gz | tail -n1 | awk '{print $2}')
+				if [[ ! -e "$outdir/Q903.annotation.${t}.${num}.sorted.bam" ]]
+				then
+					echo "Aligning Q903 $t reads to annotated transcriptome..." 1>&2
+					bwa mem -t128 $transcriptome <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.annotation.${t}.${num}.sorted.bam
+				fi
+				count=$(samtools view -@ 128 -f4 -c $outdir/Q903.annotation.${t}.${num}.sorted.bam)
+				echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
+				percentage=$(echo "scale=4;$count / $total * 100" | bc)
+				echo "Percentage of unmapped Q903 $t reads: $percentage" 1>&2
+
+				echo -e "Annotation\t$t\t$count\t$percentage" >> $outdir/Q903-map-rna.tsv
+				if [[ ! -e "${transcriptome_dir}/${t}.fa.sa" ]]
+				then
+					echo "Indexing assembled Q903 $t transcriptome..." 1>&2
+					bwa index $transcriptome_dir/${t}.fa 2>> $outdir/bwa-index-${t}.log
+				fi
+				if [[ ! -e "$outdir/Q903.assembly.${t}.${num}.sorted.bam" ]]
+				then
+
+					echo "Aligning Q903 $t reads to assembled transcriptome..." 1>&2
+					bwa mem -t128 $transcriptome_dir/${t}.fa <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.assembly.${t}.${num}.sorted.bam
+				fi
+				count=$(samtools view -@ 128 -f4 -c $outdir/Q903.assembly.${t}.${num}.sorted.bam)
+				echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
+				percentage=$(echo "scale=4;$count / $total * 100" | bc)
+				echo "Percentage of unmapped Q903 $t reads: $percentage" 1>&2
+				echo -e "Assembly\t$t\t$count\t$percentage" >> $outdir/Q903-map-rna.tsv
+
+			done
+		else
+			# Combine them
 			echo "Counting the total number of reads..." 1>&2
-			total=$(countReads.sh /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R?.fq.gz | tail -n1 | awk '{print $2}')
-			if [[ ! -e "$outdir/Q903.annotation.${t}.${num}.sorted.bam" ]]
+			total=$(countReads.sh /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?-00?_R?.fq.gz | tail -n1 | awk '{print $2}')
+			if [[ ! -e "$outdir/Q903.annotation.${t}.sorted.bam" ]]
 			then
 				echo "Aligning Q903 $t reads to annotated transcriptome..." 1>&2
-				bwa mem -t128 $transcriptome <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.annotation.${t}.${num}.sorted.bam
+				bwa mem -t128 $transcriptome <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?-00?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?-00?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.annotation.${t}.sorted.bam
 			fi
-			count=$(samtools view -@ 128 -f4 -c $outdir/Q903.annotation.${t}.${num}.sorted.bam)
+
+			count=$(samtools view -@ 128 -f4 -c $outdir/Q903.annotation.${t}.sorted.bam)
 			echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
 			percentage=$(echo "scale=4;$count / $total * 100" | bc)
 			echo "Percentage of unmapped Q903 $t reads: $percentage" 1>&2
-
 			echo -e "Annotation\t$t\t$count\t$percentage" >> $outdir/Q903-map-rna.tsv
-			if [[ ! -e "${transcriptome_dir}/${t}.fa.sa" ]]
+			if [[ -e "${transcriptome_dir}/${t}.fa.sa" ]]
 			then
 				echo "Indexing assembled Q903 $t transcriptome..." 1>&2
 				bwa index $transcriptome_dir/${t}.fa 2>> $outdir/bwa-index-${t}.log
 			fi
-			if [[ ! -e "$outdir/Q903.assembly.${t}.${num}.sorted.bam" ]]
-			then
 
+			if [[ ! -e "$outdir/Q903.assembly.${t}.sorted.bam" ]]
+			then
 				echo "Aligning Q903 $t reads to assembled transcriptome..." 1>&2
-				bwa mem -t128 $transcriptome_dir/${t}.fa <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}-00?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.assembly.${t}.${num}.sorted.bam
+				bwa mem -t128 $transcriptome_dir/${t}.fa <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?-00?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?-00?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.assembly.${t}.sorted.bam
 			fi
-			count=$(samtools view -@ 128 -f4 -c $outdir/Q903.assembly.${t}.${num}.sorted.bam)
+
+			count=$(samtools view -@ 128 -f4 -c $outdir/Q903.assembly.${t}.sorted.bam)
 			echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
 			percentage=$(echo "scale=4;$count / $total * 100" | bc)
 			echo "Percentage of unmapped Q903 $t reads: $percentage" 1>&2
 			echo -e "Assembly\t$t\t$count\t$percentage" >> $outdir/Q903-map-rna.tsv
-
-		done
+		fi
 	done
 
 	tissues="control gallery wound"
 	for t in $tissues
 	do
-		for num in $(seq 4)
-		do
+		if [[ "$combined" = false ]]
+		then
+			for num in $(seq 4)
+			do
 
+				echo "Counting the total number of reads..." 1>&2
+				total=$(countReads.sh /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R?.fq.gz | tail -n1 | awk '{print $2}')
+				if [[ ! -e "$outdir/Q903.annotation.${t}.${num}.sorted.bam" ]]
+				then
+					echo "Aligning Q903 $t reads to annotated transcriptome..." 1>&2
+					bwa mem -t128 $transcriptome <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.annotation.${t}.${num}.sorted.bam
+				fi
+				count=$(samtools view -f4 -c -@ 128 $outdir/Q903.annotation.${t}.${num}.sorted.bam)
+				echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
+				percentage=$(echo "scale=4;$count / $total * 100" | bc)
+				echo "Percentage of unmapped Q903 $t reads: $percentage" 1>&2
+
+				echo -e "Annotation\t$t\t$count\t$percentage" >> $outdir/Q903-map-rna.tsv
+				if [[ ! -e "$transcriptome_dir/${t}.fa.sa" ]]
+				then
+					echo "Indexing assembled Q903 $t transcriptome..." 1>&2
+					bwa index $transcriptome_dir/${t}.fa 2>> $outdir/bwa-index-${t}.log
+				fi
+				if [[ ! -e "$outdir/Q903.assembly.${t}.${num}.sorted.bam" ]]
+				then
+					echo "Aligning Q903 $t reads to assembled transcriptome..." 1>&2
+					bwa mem -t128 $transcriptome_dir/${t}.fa <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -O BAM -@ 128 -o $outdir/Q903.assembly.${t}.${num}.sorted.bam
+				fi
+				count=$( samtools view -f4 -c -@ 128 $outdir/Q903.assembly.${t}.${num}.sorted.bam)
+				echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
+
+				percentage=$(echo "scale=4;$count / $total * 100" | bc)
+				echo "Percentage of unmapped Q903 $t reads: $percentage" 1>&2
+
+				echo -e "Assembly\t$t\t$count\t$percentage" >> $outdir/Q903-map-rna.tsv
+			done
+		else
 			echo "Counting the total number of reads..." 1>&2
-			total=$(countReads.sh /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R?.fq.gz | tail -n1 | awk '{print $2}')
-			if [[ ! -e "$outdir/Q903.annotation.${t}.${num}.sorted.bam" ]]
+			total=$(countReads.sh /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?_R?.fq.gz | tail -n1 | awk '{print $2}')
+			if [[ ! -e "$outdir/Q903.annotation.${t}.sorted.bam" ]]
 			then
 				echo "Aligning Q903 $t reads to annotated transcriptome..." 1>&2
-				bwa mem -t128 $transcriptome <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.annotation.${t}.${num}.sorted.bam
+				bwa mem -t128 $transcriptome <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -@ 128 -O BAM -o $outdir/Q903.annotation.${t}.sorted.bam
 			fi
-			count=$(samtools view -f4 -c -@ 128 $outdir/Q903.annotation.${t}.${num}.sorted.bam)
+			count=$(samtools view -f4 -c -@ 128 $outdir/Q903.annotation.${t}.sorted.bam)
 			echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
 			percentage=$(echo "scale=4;$count / $total * 100" | bc)
 			echo "Percentage of unmapped Q903 $t reads: $percentage" 1>&2
-
 			echo -e "Annotation\t$t\t$count\t$percentage" >> $outdir/Q903-map-rna.tsv
+
 			if [[ ! -e "$transcriptome_dir/${t}.fa.sa" ]]
 			then
 				echo "Indexing assembled Q903 $t transcriptome..." 1>&2
 				bwa index $transcriptome_dir/${t}.fa 2>> $outdir/bwa-index-${t}.log
 			fi
-			if [[ ! -e "$outdir/Q903.assembly.${t}.${num}.sorted.bam" ]]
+
+			if [[ ! -e "$outdir/Q903.assembly.${t}.sorted.bam" ]]
 			then
 				echo "Aligning Q903 $t reads to assembled transcriptome..." 1>&2
-				bwa mem -t128 $transcriptome_dir/${t}.fa <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-${num}_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -O BAM -@ 128 -o $outdir/Q903.assembly.${t}.${num}.sorted.bam
+				bwa mem -t128 $transcriptome_dir/${t}.fa <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?_R1.fq.gz) <(pigz -d -c /projects/spruceup/scratch/psitchensis/Q903/annotation/amp/kallisto/Q903_reads/${t}-?_R2.fq.gz) 2>> $outdir/bwa-mem-${t}.log | samtools sort -O BAM -@ 128 -o $outdir/Q903.assembly.${t}.sorted.bam
 			fi
-			count=$( samtools view -f4 -c -@ 128 $outdir/Q903.assembly.${t}.${num}.sorted.bam)
+			count=$( samtools view -f4 -c -@ 128 $outdir/Q903.assembly.${t}.sorted.bam)
 			echo "Number of unmapped Q903 $t reads: $count/$total" 1>&2
-
 			percentage=$(echo "scale=4;$count / $total * 100" | bc)
 			echo "Percentage of unmapped Q903 $t reads: $percentage" 1>&2
-
 			echo -e "Assembly\t$t\t$count\t$percentage" >> $outdir/Q903-map-rna.tsv
-		done
+
+		fi
 	done
 fi
