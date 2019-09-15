@@ -1,5 +1,6 @@
 #!/bin/bash
 # stdin=$(cat)
+set -euo pipefail
 PROGRAM=$(basename $0)
 if [[ ! -p "/dev/stdin" &&  "$#" -lt 1 ]]
 then

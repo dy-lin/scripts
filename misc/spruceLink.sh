@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 spruce=$1
 if [[ "$#" -ne 1 && "$#" -ne 2 && "$#" -ne 3 ]]
 then

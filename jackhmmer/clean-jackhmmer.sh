@@ -1,4 +1,5 @@
 #!/bin/bash 
+set -euo pipefail
 force=false 
 gethelp=false 
 PROGRAM=$(basename $0)

@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 PROGRAM=$(basename $0)
 
 for dir in $(ls -d /projects/btl/dlin/scripts/*)

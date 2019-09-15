@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 if [[ "$#" -ne 2 ]]
 then
 	echo "USAGE: $(basename $0) <scaffold> <GFF file>" 1>&2

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 if [[ ! -s jackhmmer-blast-hits.faa ]]
 then
 	echo "USAGE: $(basename $0)" 1>&2

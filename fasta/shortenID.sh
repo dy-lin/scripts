@@ -1,5 +1,6 @@
 #!/bin/bash
 PROGRAM=$(basename $0)
+set -euo pipefail
 if [[ "$#" -lt 1 ]]
 then
 	echo "USAGE: $PROGRAM <FASTA file(s)>" 1>&2

@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 if [[ "$#" -eq 0 ]]
 then
 	echo "USAGE: $(basename $0) <MAP> <GFF>" 1>&2

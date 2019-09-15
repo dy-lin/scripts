@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 PROGRAM=$(basename $0)
 if [[ "$#" -ne 5 ]]
 then

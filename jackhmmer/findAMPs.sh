@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 if [[ "$#" -ne 2 && "$#" -ne 3  ]]
 then
 	echo "USAGE: $(basename $0) <AMP class> <peptide length>" 1>&2

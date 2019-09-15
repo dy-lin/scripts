@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 # use the gmap binary specified in the config file
 #source $(echo $(dirname "$0") | sed 's/bin//')/gmap_config.txt
 PROGRAM=$(basename $0)

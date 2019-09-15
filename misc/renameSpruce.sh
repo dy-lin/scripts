@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 # Parses GFF to see old name and new name
 
 gffs="$@"
