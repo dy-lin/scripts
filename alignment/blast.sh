@@ -42,16 +42,14 @@ else
 	dir=$4
 fi
 
-if [[ "$db" == "nr" ]]
+if [[ "$db" == nr* ]]
 then
 	echo "BLASTing against non-redundant protein sequences..." 1>&2
 #	export BLASTDB=/projects/btl/db/blast-20190104
 	export BLASTDB=/projects/btl/dlin/datasets/blast
 	case $blast in 
-		tblastn) qtype=prot; stype=nucl; dbtype=$stype; tblastn -query $query -db nt_v5 -out $dir/${qname}.nr_nt.aln.tblastn -num_threads $threads; tblastn -query $query -db nt_v5 -out $dir/${qname}.nr_nt.tsv.tblastn -num_threads $threads -outfmt '7 std qcovs';;
-		blastn) qtype=nucl;stype=nucl;dbtype=$stype; blastn -query $query -db nt_v5 -out $dir/${qname}.nr_nt.aln.blastn -num_threads $threads; blastn -query $query -db nt_v5 -out $dir/${qname}.nr_nt.tsv.blastn -num_threads $threads -outfmt '7 std qcovs';;
 		blastp) qtype=prot;stype=prot;dbtpe=$stype; blastp -query $query -db nr_v5 -out $dir/${qname}.nr.aln.blastp -num_threads $threads; blastp -query $query -db nr_v5 -out $dir/${qname}.nr.tsv.blastp -num_threads $threads -outfmt '7 std qcovs' ;;
-		blastx) qtype=nucl;$stype=prot; dbtype=$stype; blastx -query $query -db nr_v5 -out $dir/${qname}.nr.aln.blastx -num_threads $threads; blastx -query $query -db nr_v5 -out $dir/${qname}.nr.tsv.blastx -num_threads $threads -outfmt '7 std qcovs' ;;
+		blastx) qtype=nucl;stype=prot; dbtype=$stype; blastx -query $query -db nr_v5 -out $dir/${qname}.nr.aln.blastx -num_threads $threads; blastx -query $query -db nr_v5 -out $dir/${qname}.nr.tsv.blastx -num_threads $threads -outfmt '7 std qcovs' ;;
 		tblastx) qtype=prot; stype=prot; dbtype=$stype; tblastx -query $query -db nr_v5 -out $dir/${qname}.nr.aln.tblastx -num_threads $threads; tblastx -query $query -db nr_v5 -out $dir/${qname}.nr.tsv.tblastx -num_threads $threads -outfmt '7 std qcovs' ;;
 		\?) echo "ERROR: Unrecognized BLAST program." 1>&2; exit 1;;
 	esac
@@ -66,7 +64,7 @@ then
 	export BLASTDB=/projects/btl/dlin/datasets/sprot
 	case $blast in 
 		blastp) qtype=prot;stype=prot;dbtpe=$stype; blastp -query $query -db uniprot_sprot -out $dir/${qname}.sprot.aln.blastp -num_threads $threads; blastp -query $query -db uniprot_sprot -out $dir/${qname}.sprot.tsv.blastp -num_threads $threads -outfmt '7 std qcovs' ;;
-		blastx) qtype=nucl;$stype=prot; dbtype=$stype; blastx -query $query -db uniprot_sprot -out $dir/${qname}.sprot.aln.blastx -num_threads $threads; blastx -query $query -db uniprot_sprot -out $dir/${qname}.sprot.tsv.blastx -num_threads $threads -outfmt '7 std qcovs' ;;
+		blastx) qtype=nucl;stype=prot; dbtype=$stype; blastx -query $query -db uniprot_sprot -out $dir/${qname}.sprot.aln.blastx -num_threads $threads; blastx -query $query -db uniprot_sprot -out $dir/${qname}.sprot.tsv.blastx -num_threads $threads -outfmt '7 std qcovs' ;;
 		tblastx) qtype=prot; stype=prot; dbtype=$stype; tblastx -query $query -db uniprot_sprot -out $dir/${qname}.sprot.aln.tblastx -num_threads $threads; tblastx -query $query -db uniprot_sprot -out $dir/${qname}.sprot.tsv.tblastx -num_threads $threads -outfmt '7 std qcovs' ;;
 	blastp-short) qtype=prot; stype=prot;dbtype=$stype; blastp -query $query -db uniprot_sprot -out $dir/${qname}.sprot.short.aln.blastp -num_threads $threads -task blastp-short; blastp -query $query -db uniprot_sprot -out $dir/${qname}.sprot.short.tsv.blastp -num_threads $threads -task blastp-short -outfmt '7 std qcovs';;
 		?) echo "ERROR: Unrecognized BLAST program." 1>&2; exit 1;;
@@ -82,7 +80,7 @@ then
 	export BLASTDB=/projects/btl/dlin/datasets/trembl
 	case $blast in 
 		blastp) qtype=prot;stype=prot;dbtpe=$stype; blastp -query $query -db uniprot_trembl -out $dir/${qname}.trembl.aln.blastp -num_threads $threads; blastp -query $query -db uniprot_trembl -out $dir/${qname}.trembl.tsv.blastp -num_threads $threads -outfmt '7 std qcovs' ;;
-		blastx) qtype=nucl;$stype=prot; dbtype=$stype; blastx -query $query -db uniprot_trembl -out $dir/${qname}.trembl.aln.blastx -num_threads $threads; blastx -query $query -db uniprot_trembl -tout $dir/${qname}.trembl.tsv.blastx -num_threads $threads -outfmt '7 std qcovs' ;;
+		blastx) qtype=nucl;stype=prot; dbtype=$stype; blastx -query $query -db uniprot_trembl -out $dir/${qname}.trembl.aln.blastx -num_threads $threads; blastx -query $query -db uniprot_trembl -tout $dir/${qname}.trembl.tsv.blastx -num_threads $threads -outfmt '7 std qcovs' ;;
 		tblastx) qtype=prot; stype=prot; dbtype=$stype; tblastx -query $query -db uniprot_trembl -out $dir/${qname}.trembl.aln.tblastx -num_threads $threads; tblastx -query $query -db uniprot_trembl -out $dir/${qname}.trembl.tsv.tblastx -num_threads $threads -outfmt '7 std qcovs' ;;
 	blastp-short) qtype=prot; stype=prot; dbtype=$stpe; blastp -query $query -db uniprot_trembl -out $dir/${qname}.trembl.aln.blastp -num_threads $threads -task blastp-short; blastp -query $query -db uniprot_trembl -out $dir/${qname}.trembl.tsv.blastp -num_threads $threads -outfmt '7 std qcovs' -task blastp-short;;
 		\?) echo "ERROR: Unrecognized BLAST program." 1>&2; exit 1;;
@@ -95,6 +93,22 @@ then
 	case $blast in
 		blastp) qtype=prot;stype=prot;dbtype=$stype; blastp -query $query -db plant.all.protein -out $dir/${qname}.RefSeq_Plants.aln.blastp -num_threads $threads; blastp -query $query -db plant.all.protein -out $dir/${qname}.RefSeq_Plants.tsv.blastp -num_threads $threads -outfmt '7 std qcovs' ;;
 	blastp-short) qtype=prot;stype=prot;dbtype=$stype; blastp -query $query -db plant.all.protein -out $dir/${qname}.RefSeq_Plants.short.aln.blastp -num_threads $threads -task blastp-short; blastp -query $query -db plant.all.protein -out $dir/${qname}.RefSeq_Plants.short.tsv.blastp -num_threads $threads -task blastp-short -outfmt '7 std qcovs' ;;
+		blastn) read -p "DNA or RNA? " answer
+			case $answer in
+				[Rr][Nn][Aa]) qtype=nucl;stype=prot;dbtype=$stype; blastn -query $query -db plant.all.rna -out $dir/${qname}.RefSeq_Plants.rna.aln.blastn -num_threads $threads; blastn -query $query -db plant.all.rna -out $dir/${qname}.RefSeq_Plants.rna.tsv.blastn -num_threads $threads -outfmt '7 std qcovs' ;;
+				[Dd][Nn][Aa]) qtype=nucl;stype=prot;dbtype=$stype; blastn -query $query -db plant.all.dna -out $dir/${qname}.RefSeq_Plants.dna.aln.blastn -num_threads $threads; blastn -query $query -db plant.all.dna -out $dir/${qname}.RefSeq_Plants.dna.tsv.blastn -num_threads $threads -outfmt '7 std qcovs' ;;
+				\?) echo "Invalid nucleotide type." 1>&2 ; exit 1;;
+			esac
+		#	\?) echo "ERROR: Unrecognized BLAST program." 1>&2; exit 1;;
+	esac
+elif [[ "$db" == nt* ]]
+then
+	echo "BLASTing against non-redundant nucleotide sequences..." 1>&2
+	export BLASTDB=/projects/btl/dlin/datasets/blast
+	case $blast in
+		blastn) qtype=nucl;stype=nucl;dbtype=$stype; blastn -query $query -db nt_v5 -out $dir/${qname}.nt.aln.blastn -num_threads $threads; blastn -query $query -db nt_v5 -out $dir/${qname}.nt.tsv.blastn -num_threads $threads -outfmt '7 std qcovs' ;;
+		tblastn) qtype=prot;stype=nucl;dbtype=$stype; tblastn -query $query -db nt_v5 -out $dir/${qname}.nt.aln.tblastn -num_threads $threads; tblastn -query $query -db nt_v5 -out $dir/${qname}.nt.tsv.tblastn -num_threads $threads -outfmt '7 std qcovs' ;;
+		\?) echo "ERROR: Unrecognized BLAST program." 1>&2; exit 1;;
 	esac
 else
 	sname=$(basename ${db%.*})
