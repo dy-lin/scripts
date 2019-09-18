@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 # mlr.sh KEYWORD stuff to join
 
 if [[ "$#" -eq 0 ]]

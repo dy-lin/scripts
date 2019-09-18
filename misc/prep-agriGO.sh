@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 # Run volcanoDE.R for the outputfile.
 if [[ "$#" -ne 2 ]]
 then

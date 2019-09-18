@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 PROGRAM=$(basename $0)
 if [[ "$#" -lt 2 ]]
 then

@@ -2,7 +2,7 @@
 
 # use the gmap binary specified in the config file
 #source $(echo $(dirname "$0") | sed 's/bin//')/gmap_config.txt
-
+set -euo pipefail
 PROGRAM=$(basename $0)
 if [[ "$#" -eq 0 ]]
 then

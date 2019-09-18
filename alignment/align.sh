@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 if [[ "$#" -ne 3 && "$#" -ne 4 ]]
 then
 	echo "USAGE: $(basename $0) <transcriptome transcripts> <gene annotation transcripts> <genotype> [GMAP-index path]" 1>&2

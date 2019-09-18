@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 if [[ "$#" -ne 1 ]]
 then
 	echo "USAGE: $(basename $0) <GMAP GFF output>" 1>&2

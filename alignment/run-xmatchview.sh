@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 if [[ "$#" -ne 2 ]]
 then
 	echo "USAGE: $(basename $0) <FASTA file> <FASTA file>" 1>&2

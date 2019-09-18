@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 for fasta in $@
 do
 	for header in $(grep '^>' $fasta)

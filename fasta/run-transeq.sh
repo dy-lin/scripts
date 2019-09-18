@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 if [[ "$#" -eq 0 ]]
 then
 	echo "USAGE: $(basename $0) <nucleotide sequence(s) or FASTA file(s)>" 1>&2

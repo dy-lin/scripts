@@ -1,6 +1,6 @@
 #!/bin/bash
 PROGRAM=$(basename $0)
-
+set -euo pipefail
 inplace=false
 gethelp=false
 

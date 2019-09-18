@@ -1,5 +1,6 @@
 #!/bin/bash
 PROGRAM=$(basename $0)
+set -euo pipefail
 if [[ "$#" -eq 0 ]]
 then
 	echo "USAGE: $PROGRAM [protein family] <FASTA file(s)>" 1>&2

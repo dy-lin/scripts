@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 # summarize.R
 # should produce the summarized.csv file
 # Parse this file to create file for plotting

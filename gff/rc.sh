@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 # returns reverse compliment coordinates of the GFF
 
 if [[ "$#" -ne 2 ]]

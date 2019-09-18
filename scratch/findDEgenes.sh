@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 if [[ "$#" -ne 3 ]]
 then
 	echo "USAGE: $(basename $0) <DE genes> <significant GOterms> <GFF file>" 1>&2
