@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -eo pipefail
 PROGRAM=$(basename $0)
 threads=48
 gethelp=false
@@ -30,7 +30,6 @@ then
 fi
 blast=$1
 
-dbtype=$stype
 query=$2
 db=$3
 qname=$(basename ${query%.*})
