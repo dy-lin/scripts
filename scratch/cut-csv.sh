@@ -6,7 +6,7 @@ then
 	exit 1
 fi
 
-CUT=/projects/btl/dlin/bin/backup/miniconda3/bin/csvcut
+CUT=/projects/btl/dlin/src/miniconda3/bin/csvcut
 
 file=$1
 dir=$(dirname $file)
